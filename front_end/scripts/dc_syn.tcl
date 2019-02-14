@@ -31,25 +31,10 @@ suppress_message {VER-130 LINT-1 LINT-28 LINT-29 LINT-31 LINT-33 LINT-52 OPT-112
 #source -verbose "$PROY_HOME/scripts/analyze_rtl.tcl";
 
 # Vincular el disenno
-link > reports/link.txt;
+link > reports/link.txt; # Vincular los diseños
 
 # Revisar el disenno
 check_design > reports/check_dsgn.txt;
-
-foreach_in_collection net [get_nets -hierarchical -of_objects [get_cells -hierarchical -regexp "inst_ffcarryout"]] {set_dont_touch [get_attribute $net name] true;}
-
-foreach_in_collection net [get_nets -hierarchical -of_objects [get_cells -hierarchical -regexp "inst_CSK"]] {set_dont_touch [get_attribute $net name] true;}
-foreach_in_collection net [get_nets -hierarchical -of_objects [get_cells -hierarchical -regexp "inst_BS"]] {set_dont_touch [get_attribute $net name] true;}
-foreach_in_collection net [get_nets -hierarchical -of_objects [get_cells -hierarchical -regexp "inst_ffA"]] {set_dont_touch [get_attribute $net name] true;}
-foreach_in_collection net [get_nets -hierarchical -of_objects [get_cells -hierarchical -regexp "inst_ffB"]] {set_dont_touch [get_attribute $net name] true;}
-foreach_in_collection net [get_nets -hierarchical -of_objects [get_cells -hierarchical -regexp "inst_ffcntrl"]] {set_dont_touch [get_attribute $net name] true;}
-foreach_in_collection net [get_nets -hierarchical -of_objects [get_cells -hierarchical -regexp "inst_ffcin"]] {set_dont_touch [get_attribute $net name] true;}
-foreach_in_collection net [get_nets -hierarchical -of_objects [get_cells -hierarchical -regexp "inst_ffzero"]] {set_dont_touch [get_attribute $net name] true;}
-foreach_in_collection net [get_nets -hierarchical -of_objects [get_cells -hierarchical -regexp "inst_ffoverflow"]] {set_dont_touch [get_attribute $net name] true;}
-foreach_in_collection net [get_nets -hierarchical -of_objects [get_cells -hierarchical -regexp "inst_ffnegative"]] {set_dont_touch [get_attribute $net name] true;}
-foreach_in_collection net [get_nets -hierarchical -of_objects [get_cells -hierarchical -regexp "inst_ffout"]] {set_dont_touch [get_attribute $net name] true;}
-
-
 # set_ungroup [get_cells {u12 u13 u14 u15 u16}] false; 
 # Ignorar, el comando anterior, se uso a modo de exploracion para no romper la jerarquia.
 # Cosa que se puede hacer con un interruptor del comando compile_ultra
@@ -69,20 +54,15 @@ propagate_constraints;
 # ningun nivel de jerarquia los interruptores -feedthroughs y -buffer_constants; respectivamente, 
 # insertan bufers para: aislar los puertos de entrada de los puertos de salida en todos los niveles
 # de la jerarquia, y para las constantes logicas en lugar de duplicarlas
-
-set_fix_multiple_port_nets -feedthroughs -buffer_constants; # Para este ejemplo en particular
-
-set_fix_multiple_port_nets -all -
-
 #------------------------------------------------------------------------------
 #				Activar el analisis del factor de actividad
 #------------------------------------------------------------------------------
 
 if {[shell_is_in_topographical_mode]} {
-#	saif_map -start; 			
-#	set_power_prediction; 		
+	saif_map -start; 			
+	set_power_prediction; 		
 } else {
-#	propagate_switching_activity; # Este comando no se recomienda usar mas. Quedara obsoleto pronto 
+	propagate_switching_activity; # Este comando no se recomienda usar mas. Quedara obsoleto pronto 
 	# Se usaba con el constraint de set_switching_activity
 }
 
@@ -99,20 +79,15 @@ if {[shell_is_in_topographical_mode]} {
 compile_ultra -no_auto_ungroup -exact_map > reports/compile.txt; 
 
 
-remove_unconnected_ports [get_cells -regexp "inst_BS"];
-remove_unconnected_ports [get_cells -regexp "inst_ALU/inst_BS"];
-remove_unconnected_ports [get_cells -regexp "inst_ALU/inst_CSK"];
-remove_unconnected_ports [get_cells -regexp "inst_ALU"];
-
 # Lectura del saif, unicamente funcional en el modo topografico
 if {[shell_is_in_topographical_mode]} {
-#	read_saif -input "$PROY_HOME/front_end/$DESIGN_NAME.saif" \
+	read_saif -input "$PROY_HOME/front_end/$DESIGN_NAME.saif" \
  -instance_name $TEST_INST_NAME/$UUT_INST_NAME -target_instance $UUT_INST_NAME;
 #Escribir la lista de nodos a nivel de compuertas (Gate Level Netlist) que se utiliza para:
 #- Verificar el funcionamiento lógico del sistema digital después de la Síntesis RTL.
 #- Como una de las entradas para el sintetizador físico (IC Compiler).
 
-#read_saif -input top.saif -instance_name test_top -auto_map_names
+read_saif -input top.saif -instance_name test_top -auto_map_names
 }
 
 set verilogout_no_tri true
@@ -130,7 +105,7 @@ change_names -hierarchy -rules verilog
 
 # Las rutas de los archivos de salida deben existir
 
-#report_power -analysis_effort high > "$PROY_HOME_SYN/reports/$DESIGN_NAME\_syn_power.txt";
+report_power -analysis_effort high > "$PROY_HOME_SYN/reports/$DESIGN_NAME\_syn_power.txt";
 report_area >  "$PROY_HOME_SYN/reports/$DESIGN_NAME\_syn_area.txt";
 report_qor > "$PROY_HOME_SYN/reports/$DESIGN_NAME\_syn_qor.txt";
 report_timing > "$PROY_HOME_SYN/reports/$DESIGN_NAME\_syn_timing.txt";
@@ -140,17 +115,12 @@ report_port > "$PROY_HOME_SYN/reports/$DESIGN_NAME\_syn_port.txt";
 # 						Generacion de archivos de salida
 #------------------------------------------------------------------------------
 # Guardamos un formato ddc para leerlo mas rapido de vuelta en el ICC
-
 write -hierarchy -format ddc -output "$TOP_FILE_DDC";
 write -format verilog -hierarchy -output "$TOP_FILE_SYN";
-#write -format ddc -output "$TOP_FILE_DDC";
-#write -format verilog -output "$TOP_FILE_SYN";
-#Guardamos info de restricciones para leerlo en ICC
 
+#Guardamos info de restricciones para leerlo en ICC
 write_sdc "$TOP_FILE_SDC";
 
 #Guardamos info de temporizado en sdf para simulaciones 
-
 write_sdf "$TOP_FILE_SDF";
-
 puts "RM-Info: Completed script [info script]\n";

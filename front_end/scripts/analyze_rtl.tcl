@@ -36,7 +36,7 @@ if {[shell_is_in_topographical_mode]} {
 read_file -format sverilog {/mnt/vol_NFS_Zener/WD_ESPEC/moviedo/GDS/nuevo/ALU_Phy/front_end/source/top.sv /mnt/vol_NFS_Zener/WD_ESPEC/moviedo/GDS/nuevo/ALU_Phy/front_end/source/ALU_2.sv /mnt/vol_NFS_Zener/WD_ESPEC/moviedo/GDS/nuevo/ALU_Phy/front_end/source/Barrel_Shifter.sv /mnt/vol_NFS_Zener/WD_ESPEC/moviedo/GDS/nuevo/ALU_Phy/front_end/source/csk_bloque.sv /mnt/vol_NFS_Zener/WD_ESPEC/moviedo/GDS/nuevo/ALU_Phy/front_end/source/CSK_sin_mux.sv};
 
 analyze -library WORK -format sverilog $TOP_FILE > reports/analyze.txt;
-
+#Despues de este comando se puede poner list_designs 
 
 # Este script hcho por RCG carga recursivamente todos los archivos .v en el directorio "source". Hay que probarlo (ACR)
 
@@ -61,13 +61,13 @@ analyze -library WORK -format sverilog $TOP_FILE > reports/analyze.txt;
 # Elaboracion del modulo principal del disenno
 elaborate $TOP_MODULE -architecture verilog -library WORK > reports/elaborate.txt;
 
-set current_design $TOP_MODULE;
+#set current_design $TOP_MODULE;
 
 # Definimos las direcciones de enrutamiento p
-
+if {[shell_is_in_topographical_mode]} {
 set_preferred_routing_direction -layers {MET1 MET3 METTP} -direction horizontal;
 set_preferred_routing_direction -layers {MET2 MET4 METTPL} -direction vertical;
-
+}
 
 
 
