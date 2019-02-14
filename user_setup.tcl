@@ -31,7 +31,7 @@ puts "RM-Info: Running script [info script]\n"
 # Ingrese la direccion absoluta al directorio base del proyecto
 # Primero las variables generales
 # Ejemplo: set PROY_HOME "/mnt/vol_NFS_Zener/WD_ESPEC/$user_name/repositorios/TEC_RISCV/Integration";
-set PROY_HOME "/mnt/vol_NFS_Zener/WD_ESPEC/moviedo/GDS/nuevo/ALU_Phy"; 
+set PROY_HOME "/mnt/vol_NFS_Zener/WD_ESPEC/esolera/Tutorial_synopsys/nuevo/Flujo_Diseno_Digital"; 
 set PROY_HOME_SYN "$PROY_HOME/front_end";		
 set DESIGN_NAME "alu";	# Ingrese el nombre del proyecto. Ejemplo "ac97";
 set SOURCE_HOME_SYN "$PROY_HOME_SYN/source";
