@@ -45,49 +45,51 @@ write -hierarchy -format ddc -output "$PROY_HOME_SYN/db/$DESIGN_NAME\_pre_compil
 #------------------------------------------------------------------------------
 # Cargar las restricciones de disenno
 #------------------------------------------------------------------------------
-#source ./scripts/alu_constraints.tcl;
+#En esta parte se correran los constraints 
+#------------------------------------------------------------------------------
+
 source -verbose -echo "$PROY_HOME_SYN/scripts/$DESIGN_NAME\_constraints.tcl";
 propagate_constraints;
 
-# El siguiente comando controla si la compilacion agrega logica extra al disenno para garantizar que
-# no hayan avances (feedthroughs) o que no hay dos puertos de salida conectados a la misma red en 
-# ningun nivel de jerarquia los interruptores -feedthroughs y -buffer_constants; respectivamente, 
-# insertan bufers para: aislar los puertos de entrada de los puertos de salida en todos los niveles
-# de la jerarquia, y para las constantes logicas en lugar de duplicarlas
+
+#------------------------------------------------------------------------------
+#				Da permisos de poner buffer donde los necesite
+#------------------------------------------------------------------------------
+#set_fix_multiple_port_nets -feedthroughs -buffer_constants
+
 #------------------------------------------------------------------------------
 #				Activar el analisis del factor de actividad
 #------------------------------------------------------------------------------
-
+# En esta parte se selecciona el tipo de analsis para estimación de potencia que se va hacer
+# si se utiliza topográfico el analisis se hara por saif file.
+#------------------------------------------------------------------------------
 if {[shell_is_in_topographical_mode]} {
 	saif_map -start; 			
 	set_power_prediction; 		
 } else {
-	propagate_switching_activity; # Este comando no se recomienda usar mas. Quedara obsoleto pronto 
-	# Se usaba con el constraint de set_switching_activity
+	propagate_switching_activity; 
 }
 
 #------------------------------------------------------------------------------
 #								Compilacion
 #------------------------------------------------------------------------------
-
-# El interruptor en el comando de compilacion indica que se preservan los niveles jerarquicos en el 
-# disenno. Ello permite que luego se pueda hacer una exploracion de planos de grupo y las jerarquias
-#  se implementen como bloques de unidades funcionales (FUBs) en la implementacion fisica con ICC.
-
-
-
+#Compile ultra sintetiza el modulo para llevarlo a nivel de compuertas.
+#------------------------------------------------------------------------------
 compile_ultra -no_auto_ungroup -exact_map > reports/compile.txt; 
 
 
-# Lectura del saif, unicamente funcional en el modo topografico
-if {[shell_is_in_topographical_mode]} {
-	read_saif -input "$PROY_HOME/front_end/$DESIGN_NAME.saif" \
- -instance_name $TEST_INST_NAME/$UUT_INST_NAME -target_instance $UUT_INST_NAME;
-#Escribir la lista de nodos a nivel de compuertas (Gate Level Netlist) que se utiliza para:
-#- Verificar el funcionamiento lógico del sistema digital después de la Síntesis RTL.
-#- Como una de las entradas para el sintetizador físico (IC Compiler).
 
-read_saif -input top.saif -instance_name test_top -auto_map_names
+#------------------------------------------------------------------------------
+#								Lectura saif
+#------------------------------------------------------------------------------
+# Lectura del saif, unicamente funcional en el modo topográfico
+# read saif:Esta instruccion lee el saif 
+#instance_name: Buscan la instancia dentro del saif.
+#target_instance: busca la instancia dentro del diseño para matchearla con el saif.
+#-------------------------------------------------------------------------------
+if {[shell_is_in_topographical_mode]} {
+	read_saif -input "$PROY_HOME/front_end/source/$DESIGN_NAME.saif" \
+ -instance_name $TEST_INST_NAME/inst_top -auto_map_names;
 }
 
 set verilogout_no_tri true

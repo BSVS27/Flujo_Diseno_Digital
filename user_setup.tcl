@@ -37,7 +37,7 @@ set DESIGN_NAME "alu";	# Ingrese el nombre del proyecto. Ejemplo "ac97";
 set SOURCE_HOME_SYN "$PROY_HOME_SYN/source";
 set TOP_FILE "$SOURCE_HOME_SYN/top.sv";
 set TOP_MODULE "top";
-set TEST_INST_NAME "test";
+set TEST_INST_NAME "test_top";
 set UUT_INST_NAME "u0";
 
 #VAriables para el ICC
