@@ -12,10 +12,10 @@ El flujo inicia usando como entrada el código verilog que describe el RTL. Inic
 ## Jerarquía de Carpetas
 Con el fin de mantener todos los archivos ordenados y una localización estandarizada para los scripts se utiliza la siguiente jerarquía de carpetas:
 
-* **Front_end:**
+* **Front_end:** En esta carpeta se encuentran todos los archivos fuente, scipts y carpetas de guardado para generar la sintesis a nivel de compuertas apartir del RTL especificado. Se compone de las siguientes carpetas 
 * **Back_end:**
-* **Prime_time**
-* 
+* **Prime_time:**
+* **Simulación:**
 
 <p align="center">
   <img src="imagenes/Diagrama_carpetas.png">
