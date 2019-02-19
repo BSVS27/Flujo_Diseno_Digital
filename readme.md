@@ -12,11 +12,18 @@ El flujo inicia usando como entrada el código verilog que describe el RTL. Inic
 ## Jerarquía de Carpetas
 Con el fin de mantener todos los archivos ordenados y una localización estandarizada para los scripts se utiliza la siguiente jerarquía de carpetas:
 
-* **Front_end:** En esta carpeta se encuentran todos los archivos fuente, scipts y carpetas de guardado para generar la sintesis a nivel de compuertas apartir del RTL especificado. Se compone de las siguientes carpetas 
-* **Back_end:**
+* **Front_end:** En esta carpeta se encuentran todos los archivos fuente, scipts y carpetas necesarias para la sintesis a nivel de compuertas apartir del RTL especificado. Se compone de las siguientes carpetas :
+  * **Source:** En ella estan todos los archivos que sirven de entrada para la síntesis del RTL. (Código verilog y Saif de la simulación). Aquí también se guarda el netlist de salida con la información de las compuertas.
+  * **scripts:** En esta carpeta estan guardados todos los scripts utilizados para la síntesis lógica.
+  * **reports:** Aquí se guardan los reportes generados por el **Design Compiler**.
+  * **db:** En ella se guardan los archivos resultantes, que no son reportes, de la síntesis lógica.
+  * **work:**
+* **Back_end:** En esta carpeta se encuentra todos los archivos necesarios para la ejecución de la síntesis física. Su estructura es igual a la de front_end con la diferencia que su objetivo es la síntesis física.
 * **Prime_time:**
 * **Simulación:**
-
+  * **Simulación RTL:** Dentro de ella se realizan las simulaciones funcionales del RTL y las simulacion usada para generar el saif correspondiente. Existe una carpeta destinada para cada tipo de test.
+  * **Simulación post-synthesis:** Dentro de ella se realizan las simulaciones funcionales del netlist a nivel de compuertas y las simulacion usada para generar el saif correspondiente. Existe una carpeta destinada para cada tipo de test. 
+ * **Simulación física:** Dentro de ella se realizan las simulaciones funcionales del netlist a nivel físico.
 <p align="center">
   <img src="imagenes/Diagrama_carpetas.png">
 </p>
