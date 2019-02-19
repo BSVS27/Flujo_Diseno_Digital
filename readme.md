@@ -78,11 +78,28 @@ Ahora deben dirigirse a la carpeta front_end y abrir todo el contenido que hay e
 cd front_end
 subl scripts/*
 ```
-Todos los scripts se han desplegado en su pantalla, y debe dirigirse al llamado **run_all.tcl**. Este programa es usado para llamar a todos los scripts y ejecutar la síntesis en un solo comando. Todos los scripts que él llama se han abierto ya en el editor de texto, a excepción de 2 :
-* **el user**: Instancia una serie de variables con nombres y direcciones que las herramientas necesitan para que encontrar y guardar archivos en su lugar correspondiente.
+Todos los scripts se han desplegado en su pantalla, y debe dirigirse al llamado **run_all.tcl**. Este programa es usado para llamar a todos los scripts y ejecutar la síntesis en un solo comando. Hay 2 scripts que se llaman y no estan dentro de la carpeta scripts:
+* **el user_setup.tcl**: Instancia una serie de variables con nombres y direcciones que las herramientas necesitan para que encontrar y guardar archivos en su lugar correspondiente.
 * **common_setup.tcl:** Inicia agregando unas direcciones en el search path para que las herramientas encuentren la información de la tecnología que necesitan para la sintesís.
 Ambos estan ubicados en la carpeta principal por que son usados por todas las herramientas para setear el ambien de diseño.
-Ahora se abrirá la herramienta **Design Compiler**:
+Ahora se abrirá la herramienta **Design Compiler** utilizando la siguiente instrucción:
 ```
 dc_shell -topo
+```
+Con esta herramienta no se usara la interfaz gráfica. Se iniciara ejecutando las 3 primeras líneas del **run_all.tcl** sobre la consola.
+```
+set PROY_HOME "../../Flujo_Diseno_Digital";
+source $PROY_HOME/common_setup.tcl;
+source $PROY_HOME/user_setup.tcl;
+```
+Si no hubo ningun error se puede continuar con el script **dc_setup.tcl** el cual busca la licencias y configura la herramienta  **Design Compiler** para comenzar a trabajar.
+```
+source ./scripts/dc_setup.tcl;
+```
+El script siguiente analyze_rtl.tcl se correra instrucción por instrucción de manera didáctica. El primer comando esta relacionado al hecho de si se esta usando **Design Compiler** con modo topográfico o no. Este modo es usado cuando se quiere conseguir una mayor precisión en las estimaciones de potencia ya que ejecuta un pequeño pre-layout para su calculo. Cuando se usa este modo es necesario tener en la carpeta de libs un archivo milkywave(alu.mw), y esto realiza el primer comando que se ejecuta.
+
+```
+if {[shell_is_in_topographical_mode]} {
+	source -echo -verbose "$PROY_HOME_SYN/scripts/crear_mw.tcl";
+}
 ```
