@@ -1,6 +1,6 @@
 # Flujo para la Generanción de un SoC con las herramientas y Bibliotecas de Synopsys.
 ## Introducción
-En el presente git se pretende enseñar y proveer los scripts necesarios para tormar un diseño en RTL y llevarlo hasta su sintesís física utilizando las bibliotecas de 180 nm de Synopsys.  Se proveé a modo de ejemplo el código RTL de una ALU a la cual se le aplicara todos los procesos necesarios para converger su síntesis física.  
+En el presente git se pretende enseñar y proveer los scripts necesarios para tormar un diseño en RTL y llevarlo hasta su sintesís física utilizando las bibliotecas de 180 nm de XFAB.  Se proveé a modo de ejemplo el código RTL de una ALU a la cual se le aplicara todos los procesos necesarios para converger su síntesis física.  
 
 
 ## Flujo
@@ -17,14 +17,23 @@ Con el fin de mantener todos los archivos ordenados y una localización estandar
   * **scripts:** En esta carpeta estan guardados todos los scripts utilizados para la síntesis lógica.
   * **reports:** Aquí se guardan los reportes generados por el **Design Compiler**.
   * **db:** En ella se guardan los archivos resultantes, que no son reportes, de la síntesis lógica.
-  * **work:**
+  * **work:** En esta carptera se guardan los archivos temporales durante la ejecución de los scripts.
 * **Back_end:** En esta carpeta se encuentra todos los archivos necesarios para la ejecución de la síntesis física. Su estructura es igual a la de front_end con la diferencia que su objetivo es la síntesis física.
 * **Prime_time:**
 * **Simulación:**
   * **Simulación RTL:** Dentro de ella se realizan las simulaciones funcionales del RTL y las simulacion usada para generar el saif correspondiente. Existe una carpeta destinada para cada tipo de test.
-  * **Simulación post-synthesis:** Dentro de ella se realizan las simulaciones funcionales del netlist a nivel de compuertas y las simulacion usada para generar el saif correspondiente. Existe una carpeta destinada para cada tipo de test. 
- * **Simulación física:** Dentro de ella se realizan las simulaciones funcionales del netlist a nivel físico.
+  * **Simulación post-síntesis:** Dentro de ella se realizan las simulaciones funcionales del netlist a nivel de compuertas y las simulacion usada para generar el saif correspondiente. Existe una carpeta destinada para cada tipo de test. 
+  * **Simulación física:** Dentro de ella se realizan las simulaciones funcionales del netlist a nivel físico.
 <p align="center">
   <img src="imagenes/Diagrama_carpetas.png">
 </p>
 
+# Descarga Git
+Para descargar este repositorio se utiliza la intrucción ``git clone`` desde la terminal ubicada en el sitio de trabajo. Existen dos formas de usar esta instrucción que son utilizando la dirección https o la dirección ssh. Usualmente se usa la https, pero debido a que centos tiene un problema con ella se usará la ssh. 
+```
+git clone git@github.com:esolera/Flujo_Diseno_Digital.git
+```
+En caso de que también falle la ssh, se puede descargar el zip desde la pagina de github.
+# Síntesis Lógica
+
+En esta sección se explica como tomar un diseño RTL y sintetizarlo a nivel de compuertas con las herramientas Design Compiler. Se utilizará a modo de ejemplo una ALU diseñada en el laboratorio DCILAB para el procesador que se encuentra en desarrollo. 
