@@ -33,7 +33,41 @@ Para descargar este repositorio se utiliza la intrucción ``git clone`` desde la
 ```
 git clone git@github.com:esolera/Flujo_Diseno_Digital.git
 ```
-En caso de que también falle la ssh, se puede descargar el zip desde la pagina de github.
+En caso de que también falle la ssh, se puede descargar el zip desde la pagina de github. Finlizada la clonación es necesario entrar en el repositorio para continuar con el tutorial.
+# Simulación de RTL
+## Simulación Funcional
+Antes de iniciar cualquier síntesis es necesario haber verificado que RTL no contenga errores (Esto siempre es un paso fundamental). Para ellos se destino un espacio de trabajo en ```Simulaciones/Sim_RTL/funcional/```. En el caso de la alu se tiene dentro de esta carpeta un test y un archivo file_list. Se utiliza la herramienta vcs para realizar simulaciones sobre el file_list el cual llama a todos los archivos verilog incluyendo al diseño y al test. Para ejecutar la simulación solo se debe ejecutar los siguientes comandos:
+```
+vcs -sverilog -debug_access+all -R -full64 -gui -f file_list
+```
+ Es importante denotar que el file_list debe verse así donde por último se llama al test:
+```
+../../../front_end/source/top.sv
+../../../front_end/source/ALU_2.sv
+../../../front_end/source/Barrel_Shifter.sv
+../../../front_end/source/csk_bloque.sv
+../../../front_end/source/CSK_sin_mux.sv
+test_top.sv
+```
+Después de su ejecución se abrira una interfaz gráfica con toda la información del diseño y el test. Para iniciar la simulación primero debe seleccionarse las ondas que desean verse como se muestra en la figura. 
+## Simulación SAIF
 # Síntesis Lógica
+Ya con el repositorio clonado se iniciara explicando en esta sección como tomar diseño RTL y sintetizarlo a nivel de compuertas con las herramientas Design Compiler. Se utilizará a modo de ejemplo una ALU diseñada en el laboratorio DCILAB. 
 
-En esta sección se explica como tomar un diseño RTL y sintetizarlo a nivel de compuertas con las herramientas Design Compiler. Se utilizará a modo de ejemplo una ALU diseñada en el laboratorio DCILAB para el procesador que se encuentra en desarrollo. 
+Antes de iniciar es necesario correr el script que instancia todas las varaibles locales utilizadas para localizar las herramientas de synopsys. Este script esta ubicado en el directorio principal y se llama "**synopsys_tools.sh**". Para su ejecución copie este comando:
+```
+source synopsys_tools.sh
+```
+Ahora deben dirigirse a la carpeta front_end y abrir todo el contenido que hay en scripts con algun editor de texto, en este caso se usara sublime text. Para realizar esto ejecute los siguientes comandos:
+```
+cd front_end
+subl scripts/*
+```
+Todos los scripts se han desplegado en su pantalla, y debe dirigirse al llamado **run_all.tcl**. Este programa es usado para llamar a todos los scripts y ejecutar la síntesis en un solo comando. Todos los scripts que él llama se han abierto ya en el editor de texto, a excepción de 2 :
+* **el user**: Instancia una serie de variables con nombres y direcciones que las herramientas necesitan para que encontrar y guardar archivos en su lugar correspondiente.
+* **common_setup.tcl:** Inicia agregando unas direcciones en el search path para que las herramientas encuentren la información de la tecnología que necesitan para la sintesís.
+Ambos estan ubicados en la carpeta principal por que son usados por todas las herramientas para setear el ambien de diseño.
+Ahora se abrirá la herramienta **Design Compiler**:
+```
+dc_shell -topo
+```
