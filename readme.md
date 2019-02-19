@@ -50,6 +50,16 @@ vcs -sverilog -debug_access+all -R -full64 -gui -f file_list
 test_top.sv
 ```
 Después de su ejecución se abrira una interfaz gráfica con toda la información del diseño y el test. Para iniciar la simulación primero debe seleccionarse las ondas que desean verse como se muestra en la figura. 
+
+<p align="center">
+  <img src="imagenes/vcs_RTL.png">
+</p>
+Esto abrira una ventana en la cual se debera apretar el boton de run que se muestra en la próxima imagen para ejecutar la simulación. Para tener una mejor visualización de todas las ondas hay que apretar el boton de escalado, si durante todo el tiempo la bandera de error se mantuvo en bajo significa que el diseño aprobo la prueba.
+
+<p align="center">
+  <img src="wave_RTL.png">
+</p>
+
 ## Simulación SAIF
 # Síntesis Lógica
 Ya con el repositorio clonado se iniciara explicando en esta sección como tomar diseño RTL y sintetizarlo a nivel de compuertas con las herramientas Design Compiler. Se utilizará a modo de ejemplo una ALU diseñada en el laboratorio DCILAB. 
