@@ -35,6 +35,10 @@ git clone git@github.com:esolera/Flujo_Diseno_Digital.git
 ```
 En caso de que también falle la ssh, se puede descargar el zip desde la pagina de github. Finlizada la clonación es necesario entrar en el repositorio para continuar con el tutorial.
 # Simulación de RTL
+Lo primero que debe hacerse antes de las simulaciones es haber seteado las direcciones de las herramientas atraves de variables, para ello esta el script **synopsys_tools.sh**. Este script se encuentra en el directorio principal.
+```
+source synopsys_tools.sh
+```
 ## Simulación Funcional
 Antes de iniciar cualquier síntesis es necesario haber verificado que RTL no contenga errores (Esto siempre es un paso fundamental). Para ellos se destino un espacio de trabajo en ```Simulaciones/Sim_RTL/funcional/```. En el caso de la alu se tiene dentro de esta carpeta un test y un archivo file_list. Se utiliza la herramienta vcs para realizar simulaciones sobre el file_list el cual llama a todos los archivos verilog incluyendo al diseño y al test. Para ejecutar la simulación solo se debe ejecutar los siguientes comandos:
 ```
@@ -67,12 +71,8 @@ make
 ```
 Su ejecución tardará un par de segundos y una ves finalizado deben revisar que haya guardado el archivo alu.saif dentro de la carpeta source en front_end(```Flujo_Diseno_Digital/front_end/source```).
 # Síntesis Lógica
-Ya con el repositorio clonado se iniciara explicando en esta sección como tomar diseño RTL y sintetizarlo a nivel de compuertas con las herramientas Design Compiler. Se utilizará a modo de ejemplo una ALU diseñada en el laboratorio DCILAB. 
+En esta sección  se enseñara como tomar un diseño RTL y sintetizarlo a nivel de compuertas con las herramientas **Design Compiler**. Se utilizará a modo de ejemplo una ALU diseñada en el laboratorio DCILAB. 
 
-Antes de iniciar es necesario correr el script que instancia todas las varaibles locales utilizadas para localizar las herramientas de synopsys. Este script esta ubicado en el directorio principal y se llama "**synopsys_tools.sh**". Para su ejecución copie este comando:
-```
-source synopsys_tools.sh
-```
 Ahora deben dirigirse a la carpeta front_end y abrir todo el contenido que hay en scripts con algun editor de texto, en este caso se usara sublime text. Para realizar esto ejecute los siguientes comandos:
 ```
 cd front_end
