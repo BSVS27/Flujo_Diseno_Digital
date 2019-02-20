@@ -31,7 +31,7 @@ if {[shell_is_in_topographical_mode]} {
 #Para ver los diseños enlistados se utiliza el comando list_designs.
 #------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------
-read_file -format sverilog {$PROY_HOME_SYN/source/top.sv $PROY_HOME_SYN/source/ALU_2.sv $PROY_HOME_SYN/source/Barrel_Shifter.sv $PROY_HOME_SYN/source/csk_bloque.sv $PROY_HOME_SYN/source/CSK_sin_mux.sv};
+read_file -format sverilog "$PROY_HOME_SYN/source/top.sv $PROY_HOME_SYN/source/ALU_2.sv $PROY_HOME_SYN/source/Barrel_Shifter.sv $PROY_HOME_SYN/source/csk_bloque.sv $PROY_HOME_SYN/source/CSK_sin_mux.sv";
 #------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------
 # Analiza el HDL para ver su estado se le indica la libreria con la que se trabajara (-library)
