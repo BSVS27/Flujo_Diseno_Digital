@@ -117,9 +117,9 @@ set_preferred_routing_direction -layers {MET1 MET3 METTP} -direction horizontal;
 set_preferred_routing_direction -layers {MET2 MET4 METTPL} -direction vertical;
 }
 ```
-## Script: dc_setup.tcl
+## Script: dc_syn.tcl
 
-Este scrip es el encargado para ejecutar la sintesis de los archivos. Al igual que el anterior se correra instrucción por intrucción de manera didactica. Se inicia linkeando los archivos verilog, viendo que todas las referencias se cumplan y que no hagan falta ninguno. También se hace un checkeo con el segundo comando, revisando que no exista ningun problema en los diseños despues de relacionarlos.
+Este scrip es el encargado para ejecutar la síntesis de los archivos. Al igual que el anterior se correra instrucción por intrucción de manera didáctica. Se inicia enlazando los archivos verilog, viendo que todas las referencias se cumplan y que no hagan falta ninguno. También se hace una revisión con el segundo comando, revisando que no exista ningun problema en los diseños despues de relacionarlos.
 ```
 link > reports/link.txt;
 check_design > reports/check_dsgn.txt;
@@ -173,3 +173,8 @@ write_sdc "$TOP_FILE_SDC";
 write_sdf "$TOP_FILE_SDF";
 puts "RM-Info: Completed script [info script]\n";
 ```
+Verifiqué que se guardo el netlist **alu_syn.v** en la carpeta source necesario para los pasos siguientes. 
+
+# Simulación Post-Synthesys
+## Funcional
+Ahora verificaremos que el netlist generado funcione correctamente, los pasos son muy similares a los realizados en la simulación funcional de RTL. Hay que ubicarse en la carpeta ```Simulaciones/```
