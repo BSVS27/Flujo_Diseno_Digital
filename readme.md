@@ -193,7 +193,9 @@ Dentro del cuadro rojo puede verse como ha cambiado el contenido del top, ya que
 <p align="center">
   <img src="imagenes/vcs_post.png">
 </p>
+
 Ahora se abrirá un visualizador de ondas con las misma señales que en la simulación pasada y se ejecutara para revisar si el diseño funcionamente sifue funcionando. En la próxima imagen puede observar como el diseño de la alu sigue funcionando.(Recuerden fijarse en la bandera de error sigue en alto indicando que todo esta bien).
+
 <p align="center">
   <img src="imagenes/resultado_simulacion.png">
 </p>
@@ -208,3 +210,22 @@ make
 Una vez terminado verifiqué que en la carpeta source del back_end se halla guardado el archivo alu.saif.
 
 # Síntesis Física
+Ahora se seguira con la Sintésis física en donde se genera el layout del netlist generado en los pasos anteriores. Debe dirigirse a la carpeta ```Flujo_Diseno_Digital/back_end``` en donde abrirá todos los archivos presentes en la capeta scripts.
+```
+subl scripts/*
+```
+Ahora se abrira la herramienta **Integrated Circuit Compiler(ICC)** que es una herramienta de synopsys la cual ejecuta la sintesis física del circuito. Para abrirla se debe correr el próximo comando desde la carpeta ```back_end```:
+
+```
+icc_shell -gui
+```
+
+Ahora se abrira una interfáz grafica como la que se muestran en la siguiente figura. Los comando que seguiran a continuación se correran desde el *shell* de esta interfaz.
+
+<p align="center">
+  <img src="imagenes/interfaz_icc.png">
+</p>
+
+## Scripts de seteo del ambiente
+
+Se iniciaran corriendo los 2 scripts que se habían usado en la síntesis lógica: **common_setup.tcl** y **user_setup.tcl**. Posterior a ellos 
