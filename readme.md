@@ -197,8 +197,11 @@ Ahora se abrirá un visualizador de ondas con las misma señales que en la simul
 <p align="center">
   <img src="imagenes/resultado_simulacion.png">
 </p>
+
 ## Generación del archivo saif para sintésis física
+
 Ahora para generar el saif para la sintésis física debe dirigirse a la carpeta ```Simulaciones/sim_postsyn_logic/SAIF_test/``` en la cual solo debera ejecutar el comando :
+
 ```
 make
 ```
