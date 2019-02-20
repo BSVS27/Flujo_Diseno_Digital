@@ -79,7 +79,7 @@ cd front_end
 subl scripts/*
 ```
 Todos los scripts se han desplegado en su pantalla, y debe dirigirse al llamado **run_all.tcl**. Este programa es usado para llamar a todos los scripts y ejecutar la síntesis en un solo comando. Hay 2 scripts que se llaman y no estan dentro de la carpeta scripts:
-* **el user_setup.tcl**: Instancia una serie de variables con nombres y direcciones que las herramientas necesitan para que encontrar y guardar archivos en su lugar correspondiente.
+* **el user_setup.tcl**: Instancia una serie de variables con nombres y direcciones que las herramientas necesitan para encontrar y guardar archivos en su lugar correspondiente.
 * **common_setup.tcl:** Inicia agregando unas direcciones en el search path para que las herramientas encuentren la información de la tecnología que necesitan para la sintesís.
 Ambos estan ubicados en la carpeta principal por que son usados por todas las herramientas para setear el ambien de diseño.
 Ahora se abrirá la herramienta **Design Compiler** utilizando la siguiente instrucción:
