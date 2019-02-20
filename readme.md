@@ -226,6 +226,52 @@ Ahora se abrira una interfáz grafica como la que se muestran en la siguiente fi
   <img src="imagenes/interfaz_icc.png">
 </p>
 
-## Scripts de seteo del ambiente
+## Scripts de inicialización del ambiente
 
-Se iniciaran corriendo los 2 scripts que se habían usado en la síntesis lógica: **common_setup.tcl** y **user_setup.tcl**. Posterior a ellos 
+Se iniciaran corriendo los 2 scripts que se habían usado en la síntesis lógica: **common_setup.tcl** y **user_setup.tcl**. Posterior a ellos se correra un script especial para **ICC** el cual setea varaibles y licencia que necesita. El ambiente se inicializa corriendo estos 3 scripts con los siguientes comandos:
+
+```
+set PROY_HOME "../../Flujo_Diseno_Digital";
+source $PROY_HOME/common_setup.tcl;
+source $PROY_HOME/user_setup.tcl;
+source ./scripts/icc_setup.tcl;
+```
+Si todo a salido bien la inicialización de la herramienta esta terminada para comenzar a operar.
+
+## Script: alu_phy_opt.tcl
+
+Este script se correra paso a paso de manera didactica . El mismo inicia limpiando la aplicación de diseños anteriores, no siempre se necesita este comando pero es bueno asegurarse para evitar problemas.
+
+```
+remove_design -designs
+```
+
+Es necesario verificar que en la carpeta lib de back_end exista una carpeta milkywave(alu.mw), en caso de que no exista hay que crearla. Para ello se corre el próximo comando:
+
+```
+source -echo -verbose "$PROY_HOME_PHY/scripts/crear_mw.tcl"
+```
+
+Ahora le informa a la herramienta que se va hacer una estimación de potencia por medio de un archivo saif para que prepare los mapeos al subir el netlist. Para ello ejecute el próximo comando:
+
+```
+saif_map -start 
+```
+
+Ahora se nombra las varaibles que representan los voltajes de alimentación.
+
+```
+set mw_logic0_net VSS
+set mw_logic1_net VDD
+```
+
+El próximo comando importa el netlist resultante de la síntesis lógica con **DC_compiler**, especificamente importa *alu.ddc* que se encuentra en la carpeta db de front_end. Como resultado de su ejecución debe abrirse otra ventana con el espacio de trabajo para el layout, en donde se encontraran instanciadas de una vez todas las celdas.
+
+```
+import_designs -format ddc -top $TOP_MODULE $TOP_FILE_DDC;
+```
+
+<p align="center">
+  <img src="imagenes/celdas.png">
+</p>
+
