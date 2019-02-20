@@ -31,7 +31,7 @@ if {[shell_is_in_topographical_mode]} {
 #Para ver los diseños enlistados se utiliza el comando list_designs.
 #------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------
-read_file -format sverilog {/mnt/vol_NFS_Zener/WD_ESPEC/moviedo/GDS/nuevo/ALU_Phy/front_end/source/top.sv /mnt/vol_NFS_Zener/WD_ESPEC/moviedo/GDS/nuevo/ALU_Phy/front_end/source/ALU_2.sv /mnt/vol_NFS_Zener/WD_ESPEC/moviedo/GDS/nuevo/ALU_Phy/front_end/source/Barrel_Shifter.sv /mnt/vol_NFS_Zener/WD_ESPEC/moviedo/GDS/nuevo/ALU_Phy/front_end/source/csk_bloque.sv /mnt/vol_NFS_Zener/WD_ESPEC/moviedo/GDS/nuevo/ALU_Phy/front_end/source/CSK_sin_mux.sv};
+read_file -format sverilog {$PROY_HOME_SYN/source/top.sv $PROY_HOME_SYN/source/ALU_2.sv $PROY_HOME_SYN/source/Barrel_Shifter.sv $PROY_HOME_SYN/source/csk_bloque.sv $PROY_HOME_SYN/source/CSK_sin_mux.sv};
 #------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------
 # Analiza el HDL para ver su estado se le indica la libreria con la que se trabajara (-library)
