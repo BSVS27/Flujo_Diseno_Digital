@@ -22,32 +22,26 @@
 
 set cache_read ""
 set cache_write ""
-
-#source $PROY_HOME/common_setup.tcl;
-#source $PROY_HOME/user_setup.tcl;
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Configuracion de las bibliotecas: Library Setup
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
 # Modificacion del serch path: las "" definen una lista y permiten substitucion de varaibles
 # $nombre_variable -> valor. 
-
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 set search_path "$PROY_HOME_SYN";# El comando siguente concatena al search path los directorios listados
-set search_path [concat $search_path $ADDITIONAL_SEARCH_PATH];
-
+set search_path [concat $search_path $ADDITIONAL_SEARCH_PATH]; # Lo agrega en el search path
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # El comando set establece un valor para una variable. 
-
 # Solicitud de las licencias complementarias a Design-Vision
 #set_app_var synlib_wait_for_design_license "DesignWare"
 #get_license -quantity 1 {DesignWare DC-Ultra-Opt DC-Ultra-Features DC-Expert Design-Compiler}
 #list_licenses
-
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 set symbol_library "$SYMBOL_LIBRARY_FILES";
 set target_library "$TARGET_LIBRARY_FILES";
 set synthetic_library "dw_foundation.sldb";
 set link_library "* $target_library $symbol_library $synthetic_library $ADDITIONAL_LINK_LIB_FILES";
-
-
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Ubicacion de la biblioteca de trabajo (Work)
 #define_design_lib WORK -path "$PROY_HOME_PHY/work";
 

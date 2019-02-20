@@ -45,22 +45,24 @@ set mw_logic1_net VDD
 
 # Se eliminan los siguientes warnings para disminuir el ruído visual que provocan (ver nota 2)
 
-suppress_message {UID-401 SDC-3 SDC-4 HDUEDIT-104 ZRT-038 ZRT-311}
+#suppress_message {UID-401 SDC-3 SDC-4 HDUEDIT-104 ZRT-038 ZRT-311}
 
 #Estos archivos vienen en formato ddc del directorio $PROY_HOME_SYN/db
 import_designs -format ddc -top $TOP_MODULE $TOP_FILE_DDC;
 
 # Resolución de múltiples instancias y enlaze a las bibliotecas físicas.
-uniquify_fp_mw_cel
+
+#uniquify_fp_mw_cel :Unifica diseño con tecnologia
+uniquify_fp_mw_cel 
 link -force
 
 #Derivamos las conexiones de VDD y GND
-
+# Conecta a las celdas a los domonios de alimentacion. 
 derive_pg_connection -power_net VDD -power_pin vdd -ground_net VSS -ground_pin gnd
 derive_pg_connection -power_net "VDD" -ground_net "VSS" -tie
 # Lectura del archivo de restricciones de temporizado
-
-read_sdc -version Latest $TOP_FILE_SDC;
+#Lee los constraints del diseño(SDC): Synopsys Design Constraints 
+read_sdc -version Latest $TOP_FILE_SDC; 
 
 #Usaremos la estrategia para las celdas compactas
 
@@ -79,7 +81,7 @@ create_floorplan -core_utilization 0.7 -left_io2core 30 -bottom_io2core 30 -righ
 create_fp_placement -timing_driven -no_hier;
 #create_fp_placement -timing_driven
 refine_placement -congestion_effort low;
-legalize_fp_placement;
+legalize_placement;
 #GUardamos en una celda intermedia
 
 
@@ -175,6 +177,7 @@ set compile_instance_name_prefix place
 place_opt -effort high
 legalize_placement -effort medium
 
+
 #Hasta aca todo bien. Celdas conectadas a VDD VSS
 ################################################################################Reports
 create_qor_snapshot -timing -constraint -congestion -name Place
@@ -183,6 +186,23 @@ report_qor > $PROY_HOME_PHY/reports/place.qor
 report_constraint -all > $PROY_HOME_PHY/reports/place.con
 report_timing -capacitance -transition_time -input_pins -nets -delay_type max > $PROY_HOME_PHY/reports/place.max.tim
 report_timing -capacitance -transition_time -input_pins -nets -delay_type min > $PROY_HOME_PHY/reports/place.min.tim
+
+## Insertamos las celdas de relleno. Segun man page, deben conectarse de mayor a menor
+#Segun ICC Implementation Guide. Primero rellenamos y luego ruteamos
+insert_stdcell_filler  -cell_with_metal FEED25HDLL -connect_to_power VDD -connect_to_ground VSS
+insert_stdcell_filler  -cell_with_metal FEED15HDLL  -connect_to_power VDD -connect_to_ground VSS
+insert_stdcell_filler  -cell_with_metal FEED10HDLL  -connect_to_power VDD -connect_to_ground VSS
+insert_stdcell_filler  -cell_with_metal FEED7HDLL  -connect_to_power VDD -connect_to_ground VSS
+insert_stdcell_filler  -cell_with_metal  FEED5HDLL  -connect_to_power VDD -connect_to_ground VSS
+insert_stdcell_filler  -cell_with_metal FEED3HDLL  -connect_to_power VDD -connect_to_ground VSS
+insert_stdcell_filler  -cell_with_metal FEED2HDLL  -connect_to_power VDD -connect_to_ground VSS
+insert_stdcell_filler  -cell_with_metal FEED1HDLL -connect_to_power VDD -connect_to_ground VSS
+derive_pg_connection -power_net "VDD" -ground_net "VSS"
+derive_pg_connection -power_net "VDD" -ground_net "VSS" -tie
+
+preroute_standard_cells -nets VDD -fill_empty_rows -remove_floating_pieces -connect both; # -extend_to_boundaries_and_generate_pins
+preroute_standard_cells -nets VSS -fill_empty_rows -remove_floating_pieces -connect both; # -extend_to_boundaries_and_generate_pins
+
 ################################################################################Save_Milkyway_Cel
 save_mw_cel -as place_ends
 ################################################################################
@@ -281,6 +301,13 @@ set_preroute_drc_strategy -max_layer MET1
 preroute_standard_cells -nets VDD -fill_empty_rows -remove_floating_pieces -connect both; # -extend_to_boundaries_and_generate_pins
 preroute_standard_cells -nets VSS -fill_empty_rows -remove_floating_pieces -connect both; # -extend_to_boundaries_and_generate_pins
 ## Hasta aca no hay errores de conexion VDD, VSS (verify_pg_nets correcto)
+
+####Rellenos de NWELL
+insert_well_filler -layer NWELL -higher_edge max -lower_edge min
+
+###Rellenos de metal Al final P 7.57 iccug
+
+insert_metal_filler -from_metal 2 -to_metal 6
 
 ## Guardames celda ruteada, faltan rellenos finales e insertar vias redundantes. revision DRC y LVS final
 save_mw_cel -as routed_cell
