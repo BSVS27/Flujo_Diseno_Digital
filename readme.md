@@ -96,10 +96,80 @@ Si no hubo ningun error se puede continuar con el script **dc_setup.tcl** el cua
 ```
 source ./scripts/dc_setup.tcl;
 ```
-El script siguiente analyze_rtl.tcl se correra instrucción por instrucción de manera didáctica. El primer comando esta relacionado al hecho de si se esta usando **Design Compiler** con modo topográfico o no. Este modo es usado cuando se quiere conseguir una mayor precisión en las estimaciones de potencia ya que ejecuta un pequeño pre-layout para su calculo. Cuando se usa este modo es necesario tener en la carpeta de libs un archivo milkywave(alu.mw), y esto realiza el primer comando que se ejecuta.
-
+## Script: Analyze_rtl.tcl
+El script siguiente analyze_rtl.tcl se correra instrucción por instrucción de manera didáctica. El primer comando esta relacionado al hecho de si se esta usando **Design Compiler** con modo topográfico o no. Este modo es usado cuando se quiere conseguir una mayor precisión en las estimaciones de potencia ya que ejecuta un pequeño pre-layout para su cálculo. Cuando se usa este modo es necesario tener en la carpeta de libs un archivo milkywave(alu.mw). El primer comando verifica la existencia de este archivo y en caso de que no este él lo crea. Ejecute el comando a continuación para realizar dicha acción:
 ```
 if {[shell_is_in_topographical_mode]} {
 	source -echo -verbose "$PROY_HOME_SYN/scripts/crear_mw.tcl";
+	saif_map -start; 	
 }
+```
+Ahora se ejecutaran 3 comandos : el primero carga todos los archivos verilog a la herramienta, el segundo  analiza el archivo top para ver si hay problemas de dependecias o sintaxis y el último construye el diseño que se le indique. 
+```
+read_file -format sverilog {/mnt/vol_NFS_Zener/WD_ESPEC/moviedo/GDS/nuevo/ALU_Phy/front_end/source/top.sv /mnt/vol_NFS_Zener/WD_ESPEC/moviedo/GDS/nuevo/ALU_Phy/front_end/source/ALU_2.sv /mnt/vol_NFS_Zener/WD_ESPEC/moviedo/GDS/nuevo/ALU_Phy/front_end/source/Barrel_Shifter.sv /mnt/vol_NFS_Zener/WD_ESPEC/moviedo/GDS/nuevo/ALU_Phy/front_end/source/csk_bloque.sv /mnt/vol_NFS_Zener/WD_ESPEC/moviedo/GDS/nuevo/ALU_Phy/front_end/source/CSK_sin_mux.sv};
+analyze -library WORK -format sverilog $TOP_FILE > reports/analyze.txt;
+elaborate $TOP_MODULE -architecture verilog -library WORK > reports/elaborate.txt;
+```
+El último comando del script le índica a la herramienta como usar los metales, en el sentido de cuales usar para conexiones verticales y horizontales en la construcción del pre-layout creado en el modo topográfico.
+```
+if {[shell_is_in_topographical_mode]} {
+set_preferred_routing_direction -layers {MET1 MET3 METTP} -direction horizontal;
+set_preferred_routing_direction -layers {MET2 MET4 METTPL} -direction vertical;
+}
+```
+## Script: dc_setup.tcl
+
+Este scrip es el encargado para ejecutar la sintesis de los archivos. Al igual que el anterior se correra instrucción por intrucción de manera didactica. Se inicia linkeando los archivos verilog, viendo que todas las referencias se cumplan y que no hagan falta ninguno. También se hace un checkeo con el segundo comando, revisando que no exista ningun problema en los diseños despues de relacionarlos.
+```
+link > reports/link.txt;
+check_design > reports/check_dsgn.txt;
+```
+Ahora se guardara el diseño linkeado antes de la compilación en formato ddc en la carptera db.
+```
+write -hierarchy -format ddc -output "$PROY_HOME_SYN/db/$DESIGN_NAME\_pre_compile.ddc";
+```
+Antes de hacer la compilación debemos decirle a la herramienta que restricciones tiene al momento de ejecutar el diseño. De esta manera uno puede guiar a la herramienta a una solución especifica de velocidad, potencia y area. El primer comando instancia las restricciones y el segundo las propaga por la herramienta.
+```
+source -verbose -echo "$PROY_HOME_SYN/scripts/$DESIGN_NAME\_constraints.tcl";
+propagate_constraints;
+```
+El último paso antes de la compilación es que si se quiere obtener estimaciones de consumo es necesario informacelo a la herramienta por medio del siguiente paso.
+```
+if {[shell_is_in_topographical_mode]} {
+	set_power_prediction; 		
+} else {
+	propagate_switching_activity; 
+}
+```
+Ahora se ejecuta el esperado paso de la compilación con el siguiente comando:
+```
+compile_ultra -no_autoungroup -exact_map > reports/compile.txt; 
+```
+Una vez terminada y con el diseño de compuertas a mano, es momento de hacer la estimación del consumo por medio del archivo saif. El siguiente comando lee la instancia dentro del saif indicada con la información del switching, como la simulación del RTL solo tiene los nodos de entrada y salida con la bandera -auto_mapnames se propagan estos factores de switching por el resto del diseño. El comando es el siguiente: 
+```
+if {[shell_is_in_topographical_mode]} {
+	read_saif -input "$PROY_HOME/front_end/source/$DESIGN_NAME.saif" \
+ -instance_name $TEST_INST_NAME/inst_top -auto_map_names;
+}
+```
+Ahora si el diseño tiene compuertas tri estado definidas con el comando tri es necesario pasarla a wire. También es necesario nombrar los puertos para el archivo verilog del diseño generado.Los siguientes comandos haran estos 2 trabajos:
+```
+set verilogout_no_tri true
+change_names -hierarchy -rules verilog 
+```
+Ahora generamos todos los reportes de potencia, area, timing, etc.
+```
+report_power -analysis_effort high > "$PROY_HOME_SYN/reports/$DESIGN_NAME\_syn_power.txt";
+report_area >  "$PROY_HOME_SYN/reports/$DESIGN_NAME\_syn_area.txt";
+report_qor > "$PROY_HOME_SYN/reports/$DESIGN_NAME\_syn_qor.txt";
+report_timing > "$PROY_HOME_SYN/reports/$DESIGN_NAME\_syn_timing.txt";
+report_port > "$PROY_HOME_SYN/reports/$DESIGN_NAME\_syn_port.txt";
+```
+Por ultimo se guardan los archivos de salida del diseño.
+```
+write -hierarchy -format ddc -output "$TOP_FILE_DDC";
+write -format verilog -hierarchy -output "$TOP_FILE_SYN";
+write_sdc "$TOP_FILE_SDC";
+write_sdf "$TOP_FILE_SDF";
+puts "RM-Info: Completed script [info script]\n";
 ```
