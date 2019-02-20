@@ -58,7 +58,7 @@ Después de su ejecución se abrira una interfaz gráfica con toda la informaci�
 <p align="center">
   <img src="imagenes/vcs_RTL.png">
 </p>
-Esto abrira una ventana en la cual se debera apretar el boton de run que se muestra en la próxima imagen para ejecutar la simulación. Para tener una mejor visualización de todas las ondas hay que apretar el boton de escalado, si durante todo el tiempo la bandera de error se mantuvo en bajo significa que el diseño aprobo la prueba.
+Esto abrira una ventana en la cual se debera apretar el boton de run que se muestra en la próxima imagen para ejecutar la simulación. Para tener una mejor visualización de todas las ondas hay que apretar el boton de escalado, si durante todo el tiempo la bandera de error se mantuvo en alto significa que el diseño aprobo la prueba.
 
 <p align="center">
   <img src="imagenes/wave_RTL.png">
