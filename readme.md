@@ -275,3 +275,9 @@ import_designs -format ddc -top $TOP_MODULE $TOP_FILE_DDC;
   <img src="imagenes/celdas.png">
 </p>
 
+Ahora se remueve la multiples jerarquías de las celdas usadas , para sustituirla por una sola. Después de esto se utiliza el comando link para enlazar todas las instancias.
+
+```
+uniquify_fp_mw_cel 
+link -force
+```
