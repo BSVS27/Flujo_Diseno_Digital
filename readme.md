@@ -195,5 +195,13 @@ Dentro del cuadro rojo puede verse como ha cambiado el contenido del top, ya que
 </p>
 Ahora se abrirá un visualizador de ondas con las misma señales que en la simulación pasada y se ejecutara para revisar si el diseño funcionamente sifue funcionando. En la próxima imagen puede observar como el diseño de la alu sigue funcionando.(Recuerden fijarse en la bandera de error sigue en alto indicando que todo esta bien).
 <p align="center">
-  <img src="imagenes/vcs_post.png">
+  <img src="imagenes/resultado_simulacion.png">
 </p>
+## Generación del archivo saif para sintésis física
+Ahora para generar el saif para la sintésis física debe dirigirse a la carpeta ```Simulaciones/sim_postsyn_logic/SAIF_test/``` en la cual solo debera ejecutar el comando :
+```
+make
+```
+Una vez terminado verifiqué que en la carpeta source del back_end se halla guardado el archivo alu.saif.
+
+# Síntesis Física
