@@ -108,6 +108,7 @@ if {[shell_is_in_topographical_mode]} {
 Ahora se ejecutaran 3 comandos : el primero carga todos los archivos verilog a la herramienta, el segundo  analiza el archivo top para ver si hay problemas de dependecias o sintaxis y el último construye el diseño que se le indique. 
 ```
 read_file -format sverilog "$PROY_HOME_SYN/source/top.sv $PROY_HOME_SYN/source/ALU_2.sv $PROY_HOME_SYN/source/Barrel_Shifter.sv $PROY_HOME_SYN/source/csk_bloque.sv $PROY_HOME_SYN/source/CSK_sin_mux.sv";
+analyze -library WORK -format sverilog $TOP_FILE > reports/analyze.txt;
 elaborate $TOP_MODULE -architecture verilog -library WORK > reports/elaborate.txt;
 ```
 El último comando del script le índica a la herramienta como usar los metales, en el sentido de cuales usar para conexiones verticales y horizontales en la construcción del pre-layout creado en el modo topográfico.
@@ -177,4 +178,22 @@ Verifiqué que se guardo el netlist **alu_syn.v** en la carpeta source necesario
 
 # Simulación Post-Synthesys
 ## Funcional
-Ahora verificaremos que el netlist generado funcione correctamente, los pasos son muy similares a los realizados en la simulación funcional de RTL. Hay que ubicarse en la carpeta ```Simulaciones/```
+Ahora verificaremos que el netlist generado funcione correctamente, los pasos son muy similares a los realizados en la simulación funcional de RTL. Hay que ubicarse en la carpeta ```Simulaciones/sim_postsyn_logic/Funcional/``` dentro de ella se observara un file__list y un test. Este file_list es ligeramente diferente pues inicia llamando las primitivas y celdas de XFAB usadas en la síntesis para ejecutar la simulación. También llama al verilog del netlist a nivel de compuertas y al test.
+```
+/mnt/vol_NFS_Zener/tools/synopsys/pdks/xh018-ams/XFAB_snps_CustomDesigner_kit_v2_1_0/xh018/diglibs/D_CELLS_HDLL/v2_1/verilog/v2_1_0/VLG_PRIMITIVES.v
+/mnt/vol_NFS_Zener/tools/synopsys/pdks/xh018-ams/XFAB_snps_CustomDesigner_kit_v2_1_0/xh018/diglibs/D_CELLS_HDLL/v2_1/verilog/v2_1_0/D_CELLS_HDLL.v
+../../../front_end/source/alu_syn.v
+test_top.sv
+```
+Para ejecutar la simulación solo se debe ejecutar el mismo comando usado con anterioridad:
+```
+vcs -sverilog -debug_access+all -R -full64 -gui -f file_list
+```
+Dentro del cuadro rojo puede verse como ha cambiado el contenido del top, ya que ahora sus instancias estan cosntruidas con compuertas. Para poder verlo deben llevar la barra hasta la parte más baja.
+<p align="center">
+  <img src="imagenes/vcs_post.png">
+</p>
+Ahora se abrirá un visualizador de ondas con las misma señales que en la simulación pasada y se ejecutara para revisar si el diseño funcionamente sifue funcionando. En la próxima imagen puede observar como el diseño de la alu sigue funcionando.(Recuerden fijarse en la bandera de error sigue en alto indicando que todo esta bien).
+<p align="center">
+  <img src="imagenes/vcs_post.png">
+</p>
