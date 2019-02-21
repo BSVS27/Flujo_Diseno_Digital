@@ -17,120 +17,144 @@
 #
 ###############################################################################################################.
 
-
-
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 # Remover diseños anteriores
-
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 remove_design -designs
-
-### Creamos biblioteca MilkyWay
-
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# Antes de iniciar el diseño es necesario contar con una carpeta milkywave en libs. 
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 source -echo -verbose "$PROY_HOME_PHY/scripts/crear_mw.tcl"
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# Se inicia el mapeo de saif para las estimaciónes de potencia.
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 saif_map -start 
-
-# Definir VSS y VDD
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# Define los 1 o 0 logicos
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 set mw_logic0_net VSS
 set mw_logic1_net VDD
-
-
-
-#------------------------------------------------------------------------------
-# Crear o Cargar el Diseño
-#------------------------------------------------------------------------------
-
-
-#------------------------------------------------------------------------------
-# Importar el Gate-Level-Netlist obtenido en la Síntesis RTL o el DDC. 
-#------------------------------------------------------------------------------
-
-# Se eliminan los siguientes warnings para disminuir el ruído visual que provocan (ver nota 2)
-
-#suppress_message {UID-401 SDC-3 SDC-4 HDUEDIT-104 ZRT-038 ZRT-311}
-
-#Estos archivos vienen en formato ddc del directorio $PROY_HOME_SYN/db
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# Se abre el archivo generado por DC_compiler guardado en la carpeta db en front end, se abre en formato ddc.
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 import_designs -format ddc -top $TOP_MODULE $TOP_FILE_DDC;
-
-# Resolución de múltiples instancias y enlaze a las bibliotecas físicas.
-
-#uniquify_fp_mw_cel :Unifica diseño con tecnologia
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# Se abre el archivo generado por DC_compiler guardado en la carpeta db en front end, se abre en formato ddc.
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 uniquify_fp_mw_cel 
 link -force
-
-#Derivamos las conexiones de VDD y GND
-# Conecta a las celdas a los domonios de alimentacion. 
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# Nombra los voltajes de alimentación
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 derive_pg_connection -power_net VDD -power_pin vdd -ground_net VSS -ground_pin gnd
 derive_pg_connection -power_net "VDD" -ground_net "VSS" -tie
-# Lectura del archivo de restricciones de temporizado
-#Lee los constraints del diseño(SDC): Synopsys Design Constraints 
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# Este comando lo que hace es leer los archivos de restricciones de synopsys con los que trabajara.
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 read_sdc -version Latest $TOP_FILE_SDC; 
-
-#Usaremos la estrategia para las celdas compactas
-
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# El para aplicar la estrategia de diseño necesita conocer la unidad mínima de tile. En este caso se le da 
+# especificando la tecnología con la que se trabaja hdll. 
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 set_fp_strategy -unit_tile_name "hdll";
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# Activa unas optimizaciones al momento de virtual in-place optimization durante la colocación de celdas.
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 set_fp_placement_strategy -virtual_IPO on
-
-# Se crea el floorplan inicial con un factor de 1.3 y una utilización del 70% con un margen de 
-# 40 um en el perimetro, previendo la colocación de los anillos de alimentación.
-
-#Primero creamos el plan para el core
-
-#create_floorplan -control_type aspect_ratio  -core_aspect_ratio 1.3 -core_utilization 0.7 -no_double_back -left_io2core 40 -bottom_io2core 40 -right_io2core 40 -top_io2core 40;
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# El siguiente comando genera el floorplan con la dimensiones indicadas en um.
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 create_floorplan -core_utilization 0.7 -left_io2core 30 -bottom_io2core 30 -right_io2core 30 -top_io2core 30;
-#Iniciar la etapa de colocación física (placement) usando los comandos create_fp_placement y legalize_placement
-# Esta colocacion es temporal, solo para analisis de congestion
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# Genera el placemente de las celdas. La bandera de timing habilita esta optimización y la otra bandera 
+# pide que no se haga jerarquico
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 create_fp_placement -timing_driven -no_hier;
-#create_fp_placement -timing_driven
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# La herramienta hace un estudio de donde podrían ocurrir posibles congestiones y reordena las celdas ya colocadas
+# para evitarlas.
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 refine_placement -congestion_effort low;
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# Confirma a la herramienta que este va ser el placement a usar
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 legalize_placement;
-#GUardamos en una celda intermedia
-
-
-
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# En esta parte se guarda el diseño logrado hasta el momento.
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 save_mw_cel -as floorplan_ends;
-
 copy_mw_cel -from  floorplan_ends -to floorplan_ends1;
-
 close_mw_cel floorplan_ends;
 close_mw_cel top;
-## Vamos por aca
 open_mw_cel floorplan_ends1;
-
-#Trabajamos sobre otra celda y verificamos librerias
-
-#check_library;
-#check_tlu_files;
-list_libs;
-
-
-## Creacions de los anillos y pads de VDD (sin UPF)
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# Se redefien los nombres de las fuentes, se hace por seguridad en caso de la que herramienta en algun momento se pierda
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 derive_pg_connection -power_net VDD -power_pin vdd -ground_net VSS -ground_pin gnd
 derive_pg_connection -power_net VDD -power_pin vdd -ground_net VSS -ground_pin gnd -tie
-
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+#El próximo comando lo que hace es setear una variable de **IC Compiler** que define el orden en que se hacen los straps. 
+#Los straps son las líneas de vdd y tierra en donde se colocan las celdas para su alimentación. 
+#Por default la herramienta inicia contruyendolos en capas de metal más externas hacia las más bajas, pero en algunos casos como este es necesario hacerlo de manera inversa. 
+#Para ellos solo seteamos en true esta variable.
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 set pns_commit_lower_layer_first true
-
-# Configuración de las restricciones de los metales del anillo de potencia para que la herramienta
-# efectúe las estimaciones de IR_Drop
-
-# Esta seccion del script tomado de curso  Synopsys EDA_Back_End
-
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+#En los próximos comandos le define las restricciones que tiene la herramienta para generar el mallado de alimentacion
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 set_fp_rail_constraints -add_layer  -layer METTP -direction horizontal -max_strap 16 -min_strap 4 -min_width 2 -spacing 12
-
 set_fp_rail_constraints -add_layer  -layer METTPL -direction vertical  -max_strap 16 -min_strap 4 -min_width 2 -spacing 12 
-
 set_fp_rail_constraints  -set_ring -horizontal_ring_layer { METTP  } -vertical_ring_layer { METTPL } -extend_strap core_ring
-
-## Por ahrao no bloqueamos. Ejemplo apra bloquear la SRAM
-#set_fp_block_ring_constraints -add -horizontal_layer M7 -horizontal_width 2 -horizontal_offset 2 -vertical_layer M8 \
-#-vertical_width 2 -vertical_offset 2 -block_type master  -block {  SRAM1RW512x32 } -net  {VDD VSS}
-
 set_fp_rail_constraints -set_global   -no_routing_over_hard_macros -no_routing_over_soft_macros
-
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+#Permite a las standar cells a ser colocadas debajo de los pnets, verificando sus pines para evitar cortos con los pnets
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 set_pnet_options -partial {METTP METTPL}
-
-#para prevenir que los straps no queden alineados con las correas de alimentacion
-## Esta deberia tratar de poner los straps en el medio
-#set_fp_rail_strategy -put_strap_in_std_cell_row true
-set_fp_rail_strategy -align_strap_with_m1_rail true ; #-std_cell_rail_connect_layer MET1 -put_strap_in_std_cell_row true
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+#Este comando alínea los straps de vdd y ground con los rieles de la celda en nivel más bajo de metal. 
+#El comando trata de evitar que un strap de vdd caiga sobre un riel de ground de alguna celda o viceversa.
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+set_fp_rail_strategy -align_strap_with_m1_rail true; 
 
 synthesize_fp_rail  -nets { VDD VSS } -voltage_supply 1.8 -synthesize_power_plan -power_budget 1000 -pad_masters { VDD VSS }  \
 -use_pins_as_pads -use_strap_ends_as_pads 
