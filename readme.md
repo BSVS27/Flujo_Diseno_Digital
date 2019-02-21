@@ -389,3 +389,60 @@ preroute_standard_cells -nets VSS -fill_empty_rows -remove_floating_pieces -conn
 <p align="center">
   <img src="imagenes/ruteo_alimentacion.png">
 </p>
+
+Al momento de hacer los ruteos de la alimentación la herramienta pudo haber movido algunas celdas de donde estaban. Por lo cual se vuelven a correr los comando de colocación y reordenamiento.
+
+```
+create_fp_placement -timing_driven -no_hierarchy_gravity -incremental all;
+refine_placement -congestion_effort high;
+legalize_fp_placement;
+```
+Se vuelven a ejecutar los comandos de ruteo, pero con las banderas de que revise si alguna celda no quedo conectada para que la conecte y que remueva aquellas secciones de metal que no conectan a ninguna celda.
+
+```
+preroute_standard_cells -nets VDD -fill_empty_rows -remove_floating_pieces -connect both; 
+preroute_standard_cells -nets VSS -fill_empty_rows -remove_floating_pieces -connect both; 
+```
+Ahora se vuelve a guardar y abrir el diseño para continuar con el ruteo entre las celdas.
+```
+set_preroute_advanced_via_rule
+save_mw_cel -as powerplan_rail_ends
+close_mw_cel floorplan_ends1
+open_mw_cel powerplan_rail_ends
+```
+
+El primero de estos 3 comandos, crea un prefijo utilizado durante la compilación, el segundo hace un placemente, ruteo y optimización de manera simultanea. Y el último confirma el ordenamiento.
+```
+set compile_instance_name_prefix place
+place_opt -effort high
+legalize_placement -effort medium
+```
+Ahora se van a generar algunos reportes de interes, antes de continuar:
+```
+create_qor_snapshot -timing -constraint -congestion -name Place
+report_qor_snapshot  > $PROY_HOME_PHY/reports/place.qor_snapshot.rpt
+report_qor > $PROY_HOME_PHY/reports/place.qor
+report_constraint -all > $PROY_HOME_PHY/reports/place.con
+report_timing -capacitance -transition_time -input_pins -nets -delay_type max > $PROY_HOME_PHY/reports/place.max.tim
+report_timing -capacitance -transition_time -input_pins -nets -delay_type min > $PROY_HOME_PHY/reports/place.min.tim
+```
+Ahora se ingresan las celdas de relleno para los espacios vacíos con el fin de dar estabilidad al circuito. Se redefinen los nombre de la fuente vdd y gnd. Y se revisa que ninguna celda este desconectada de vdd y tierra. Al final igual se vuelve a guardar el diseño generado. En la siguiente imagen se observa como quedaron agregadas las celdas de relleno.
+```
+insert_stdcell_filler  -cell_with_metal FEED25HDLL -connect_to_power VDD -connect_to_ground VSS
+insert_stdcell_filler  -cell_with_metal FEED15HDLL  -connect_to_power VDD -connect_to_ground VSS
+insert_stdcell_filler  -cell_with_metal FEED10HDLL  -connect_to_power VDD -connect_to_ground VSS
+insert_stdcell_filler  -cell_with_metal FEED7HDLL  -connect_to_power VDD -connect_to_ground VSS
+insert_stdcell_filler  -cell_with_metal  FEED5HDLL  -connect_to_power VDD -connect_to_ground VSS
+insert_stdcell_filler  -cell_with_metal FEED3HDLL  -connect_to_power VDD -connect_to_ground VSS
+insert_stdcell_filler  -cell_with_metal FEED2HDLL  -connect_to_power VDD -connect_to_ground VSS
+insert_stdcell_filler  -cell_with_metal FEED1HDLL -connect_to_power VDD -connect_to_ground VSS
+derive_pg_connection -power_net "VDD" -ground_net "VSS"
+derive_pg_connection -power_net "VDD" -ground_net "VSS" -tie
+preroute_standard_cells -nets VDD -fill_empty_rows -remove_floating_pieces -connect both;
+preroute_standard_cells -nets VSS -fill_empty_rows -remove_floating_pieces -connect both;
+```
+
+
+<p align="center">
+  <img src="imagenes/Celdas_relleno.png">
+</p>
