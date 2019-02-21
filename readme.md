@@ -339,3 +339,21 @@ Ahora se vuelven a definir los dominios de voltaje, esto se hace varias veces po
 derive_pg_connection -power_net VDD -power_pin vdd -ground_net VSS -ground_pin gnd
 derive_pg_connection -power_net VDD -power_pin vdd -ground_net VSS -ground_pin gnd -tie
 ```
+El próximo comando lo que hace es setear una variable de **IC Compiler** que define el orden en que se hacen los straps. Los straps son las líneas de vdd y tierra en donde se colocan las celdas para su alimentación. Por default la herramienta inicia contruyendolos en capas de metal más externas hacia las más bajas, pero en algunos casos como este es necesario hacerlo de manera inversa. Para ellos solo seteamos en true esta variable.
+
+```
+set pns_commit_lower_layer_first true
+```
+En los próximos comandos le define las restricciones que tiene la herramienta para generar el mallado de alimentacion. Como la distancias entre los straps, lo metales que usara para horizontales y verticales etc.
+
+```
+set_fp_rail_constraints -add_layer  -layer METTP -direction horizontal -max_strap 16 -min_strap 4 -min_width 2 -spacing 12
+set_fp_rail_constraints -add_layer  -layer METTPL -direction vertical  -max_strap 16 -min_strap 4 -min_width 2 -spacing 12 
+set_fp_rail_constraints  -set_ring -horizontal_ring_layer { METTP  } -vertical_ring_layer { METTPL } -extend_strap core_ring
+set_fp_rail_constraints -set_global   -no_routing_over_hard_macros -no_routing_over_soft_macros
+```
+
+El siguiente comando invoca unas herramientas de **IC Compiler** que evitan las violaciones de straps. 
+```
+set_pnet_options -partial {METTP METTPL}
+```
