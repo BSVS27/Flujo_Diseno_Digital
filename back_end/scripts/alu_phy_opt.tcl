@@ -155,64 +155,86 @@ set_pnet_options -partial {METTP METTPL}
 #----------------------------------------------------------------------------------------------------------------
 #----------------------------------------------------------------------------------------------------------------
 set_fp_rail_strategy -align_strap_with_m1_rail true; 
-
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+#Este comando sintetiza el power plan con las restricciones dadas
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 synthesize_fp_rail  -nets { VDD VSS } -voltage_supply 1.8 -synthesize_power_plan -power_budget 1000 -pad_masters { VDD VSS }  \
 -use_pins_as_pads -use_strap_ends_as_pads 
-#
-
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+#Este comando confirma que el power nets generado esta bien y se usara.
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 commit_fp_rail
-
-#Tratemos de colocar las correas de las celdas estandar con vias en los centros
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# El primero de estos 3 comandos mueve las vias al centro de las interconexiones de las alimentación hacia el centro,
+#Los otros dos comandos conetan las celdas a los anillos y straps de alimentacion
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 set_preroute_advanced_via_rule -move_via_to_center
 preroute_standard_cells -nets VDD -fill_empty_rows -remove_floating_pieces -connect both -extend_to_boundaries_and_generate_pins
 preroute_standard_cells -nets VSS -fill_empty_rows -remove_floating_pieces -connect both -extend_to_boundaries_and_generate_pins
-
-#analyze_fp_rail
-#######Save_Milkyway_Cell
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+#Se guarda el diseño que se lleva hasta ahora
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 save_mw_cel -as powerplan_rail_ends
-
-#set_pnet_options ...; # (en caso que sea necesario bloquear algo)
-#create_fp_placement -timing_driven -incremental all;
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+#Al momento de hacer los ruteos de la alimentación la herramienta pudo haber movido algunas celdas de donde estaban. 
+#Por lo cual se vuelven a correr los comando de colocación y reordenamiento.
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 create_fp_placement -timing_driven -no_hierarchy_gravity -incremental all;
 refine_placement -congestion_effort high;
 legalize_fp_placement;
-
-preroute_standard_cells -nets VDD -fill_empty_rows -remove_floating_pieces -connect both; # -extend_to_boundaries_and_generate_pins
-preroute_standard_cells -nets VSS -fill_empty_rows -remove_floating_pieces -connect both; # -extend_to_boundaries_and_generate_pins
-
-#vovemos al punto por defecto.
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+#Al momento de hacer los ruteos de la alimentación la herramienta pudo haber movido algunas celdas de donde estaban. 
+#Por lo cual se vuelven a correr los comando de colocación y reordenamiento.
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+preroute_standard_cells -nets VDD -fill_empty_rows -remove_floating_pieces -connect both; 
+preroute_standard_cells -nets VSS -fill_empty_rows -remove_floating_pieces -connect both; 
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+#Este comando ahora invoca la reglas de ruteo para las vías. Y se vuelve a guarda y cerrar el diseño
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 set_preroute_advanced_via_rule
-
-#preroute_standard_cells -nets VDD -mode net -connect horizontal
-
-#######################
-#  Place and Routing  #
-#######################
-
-## Abrimos otra celda MW temporal 
-
 save_mw_cel -as powerplan_rail_ends
 close_mw_cel floorplan_ends1
 open_mw_cel powerplan_rail_ends
-
-
-################################################################################Place_Optimization
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+#El primero de estos 3 comandos, crea un prefijo utilizado durante la compilación, el segundo hace un placemente, ruteo y optimización de manera simultanea. 
+#Y el último confirma el ordenamiento.
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 set compile_instance_name_prefix place
 place_opt -effort high
 legalize_placement -effort medium
-
-
-#Hasta aca todo bien. Celdas conectadas a VDD VSS
-################################################################################Reports
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# Ahora se generan algunos reportes.
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 create_qor_snapshot -timing -constraint -congestion -name Place
 report_qor_snapshot  > $PROY_HOME_PHY/reports/place.qor_snapshot.rpt
 report_qor > $PROY_HOME_PHY/reports/place.qor
 report_constraint -all > $PROY_HOME_PHY/reports/place.con
 report_timing -capacitance -transition_time -input_pins -nets -delay_type max > $PROY_HOME_PHY/reports/place.max.tim
 report_timing -capacitance -transition_time -input_pins -nets -delay_type min > $PROY_HOME_PHY/reports/place.min.tim
-
-## Insertamos las celdas de relleno. Segun man page, deben conectarse de mayor a menor
-#Segun ICC Implementation Guide. Primero rellenamos y luego ruteamos
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# Ahora se ingresan las celdas de relleno para los espacios vacíos con el fin de dar estabilidad al circuito. 
+#Esto se va hacer 2 veces para que al momento de rutear las tenga en consideración 
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 insert_stdcell_filler  -cell_with_metal FEED25HDLL -connect_to_power VDD -connect_to_ground VSS
 insert_stdcell_filler  -cell_with_metal FEED15HDLL  -connect_to_power VDD -connect_to_ground VSS
 insert_stdcell_filler  -cell_with_metal FEED10HDLL  -connect_to_power VDD -connect_to_ground VSS
@@ -223,15 +245,15 @@ insert_stdcell_filler  -cell_with_metal FEED2HDLL  -connect_to_power VDD -connec
 insert_stdcell_filler  -cell_with_metal FEED1HDLL -connect_to_power VDD -connect_to_ground VSS
 derive_pg_connection -power_net "VDD" -ground_net "VSS"
 derive_pg_connection -power_net "VDD" -ground_net "VSS" -tie
-
-preroute_standard_cells -nets VDD -fill_empty_rows -remove_floating_pieces -connect both; # -extend_to_boundaries_and_generate_pins
-preroute_standard_cells -nets VSS -fill_empty_rows -remove_floating_pieces -connect both; # -extend_to_boundaries_and_generate_pins
-
-################################################################################Save_Milkyway_Cel
+preroute_standard_cells -nets VDD -fill_empty_rows -remove_floating_pieces -connect both;
+preroute_standard_cells -nets VSS -fill_empty_rows -remove_floating_pieces -connect both;
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# Se guarda el diseño
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 save_mw_cel -as place_ends
-################################################################################
 close_mw_cel powerplan_rail_ends
-
 open_mw_cel place_ends
 
 
