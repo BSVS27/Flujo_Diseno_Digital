@@ -611,3 +611,4 @@ report_qor > "$PROY_HOME_PHY/reports/$DESIGN_NAME\_phy_qor.txt"
 report_timing > "$PROY_HOME_PHY/reports/$DESIGN_NAME\_phy_timing.txt"
 report_port > "$PROY_HOME_PHY/reports/$DESIGN_NAME\_phy_port.txt"
 ```
+
