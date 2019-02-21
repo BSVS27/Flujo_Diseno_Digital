@@ -291,7 +291,12 @@ Ahora se van a leer las restricciones con las que trabajara la herramienta de sy
 ```
 read_sdc -version Latest $TOP_FILE_SDC; 
 ```
-
+Para utilzar la infromación del SAIF en la síntesis física y el floorplan
+```
+reset_switching_activity
+read_saif -input "$PROY_HOME/back_end/source/$DESIGN_NAME.saif" \
+ -instance_name $TEST_INST_NAME/inst_top -auto_map_names;
+```
 El primer comando define el mallado mínimo del espacio de trabajo, para indicarselo se utiliza la técnologia que en este caso es *hdll* (high density low leakage). El segundo comando activa las optimizaciones al momento del colocado de las celdas para el timing.
 
 ```
