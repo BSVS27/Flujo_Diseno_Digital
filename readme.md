@@ -281,3 +281,79 @@ Ahora se remueve la multiples jerarquías de las celdas usadas , para sustituirl
 uniquify_fp_mw_cel 
 link -force
 ```
+El siguiente comando especifica los nombres de las fuentes de poder como Vdd y tierra.
+
+```
+derive_pg_connection -power_net VDD -power_pin vdd -ground_net VSS -ground_pin gnd
+derive_pg_connection -power_net "VDD" -ground_net "VSS" -tie
+```
+Ahora se van a leer las restricciones con las que trabajara la herramienta de synopsys.
+```
+read_sdc -version Latest $TOP_FILE_SDC; 
+```
+
+El primer comando define el mallado mínimo del espacio de trabajo, para indicarselo se utiliza la técnologia que en este caso es *hdll* (high density low leakage). El segundo comando activa las optimizaciones al momento del colocado de las celdas para el timing.
+
+```
+set_fp_strategy -unit_tile_name "hdll";
+set_fp_placement_strategy -virtual_IPO on
+```
+
+El próximo comando genera el floorplan indicandoles sus dimensiones y área de core. En la próxima imagen se puede ver el resultado  al generar el floorplan, donde el cuadrado de color celeste son los pads del chip, la celdas son ordenadas afuera como en una fila y el cuadrado pequeño interno es donde se el permite a la herramienta colocar las celdas.
+
+```
+create_floorplan -core_utilization 0.7 -left_io2core 30 -bottom_io2core 30 -right_io2core 30 -top_io2core 30;
+```
+
+<p align="center">
+  <img src="imagenes/floor_plan.png">
+</p>
+
+El próximo comando coloca las celdas en el area permitida indicandole que no lo haga de manera jerárquica y optimizando para timing. En la imagen se observa como todas las celdas se colocaron en el cuadrado interno.
+
+```
+create_fp_placement -timing_driven -no_hier;
+```
+
+<p align="center">
+  <img src="imagenes/Colocacion.png">
+</p>
+
+El primer comando siguiente hace un estudio de posibles áreas de congestión dentro del chip debido a la colocación de sus celdas y con base en esto las reordena para eliminar estos puntos. El segundo le confirma a la herramienta que este va ser el ordenamiento usado.
+
+```
+refine_placement -congestion_effort low;
+legalize_placement;
+```
+En la siguiente parte por motivos de seguridad se guarda el diseño logrado hasta el momento.
+
+```
+save_mw_cel -as floorplan_ends;
+copy_mw_cel -from  floorplan_ends -to floorplan_ends1;
+close_mw_cel floorplan_ends;
+close_mw_cel top;
+open_mw_cel floorplan_ends1;
+```
+Ahora se vuelven a definir los dominios de voltaje, esto se hace varias veces por motivos de seguridad ya que en algun proceso la herramienta puede perder estas referencias.
+```
+derive_pg_connection -power_net VDD -power_pin vdd -ground_net VSS -ground_pin gnd
+derive_pg_connection -power_net VDD -power_pin vdd -ground_net VSS -ground_pin gnd -tie
+```
+El próximo comando lo que hace es setear una variable de **IC Compiler** que define el orden en que se hacen los straps. Los straps son las líneas de vdd y tierra en donde se colocan las celdas para su alimentación. Por default la herramienta inicia contruyendolos en capas de metal más externas hacia las más bajas, pero en algunos casos como este es necesario hacerlo de manera inversa. Para ellos solo seteamos en true esta variable.
+
+```
+set pns_commit_lower_layer_first true
+```
+En los próximos comandos le define las restricciones que tiene la herramienta para generar el mallado de alimentacion. Como la distancias entre los straps, lo metales que usara para horizontales y verticales etc.
+
+```
+set_fp_rail_constraints -add_layer  -layer METTP -direction horizontal -max_strap 16 -min_strap 4 -min_width 2 -spacing 12
+set_fp_rail_constraints -add_layer  -layer METTPL -direction vertical  -max_strap 16 -min_strap 4 -min_width 2 -spacing 12 
+set_fp_rail_constraints  -set_ring -horizontal_ring_layer { METTP  } -vertical_ring_layer { METTPL } -extend_strap core_ring
+set_fp_rail_constraints -set_global   -no_routing_over_hard_macros -no_routing_over_soft_macros
+```
+
+El siguiente comando invoca unas herramientas de **IC Compiler** que evitan las violaciones de straps. 
+```
+set_pnet_options -partial {METTP METTPL}
+```
