@@ -505,8 +505,109 @@ route_zrt_detail -incremental true -max_number_iterations 40; #40
 focal_opt -drc_nets all
 remove_zrt_redundant_shapes -report_changed_nets true
 verify_zrt_route -antenna true
+verify_zrt_route -antenna true  > "$PROY_HOME_PHY/reports/$DESIGN_NAME\_drc_route.txt"
+verify_pg_nets > "$PROY_HOME_PHY/reports/$DESIGN_NAME\_pg_nets.txt"
+verify_pg_nets -pad_pin_connection all > "$PROY_HOME_PHY/reports/$DESIGN_NAME\_pg_nets_pad_pin_connection.txt"
 ```
 <p align="center">
   <img src="imagenes/diseno_conectado.png">
 </p>
 
+Ya solo quedan los últimos pasos del diseño que son verificar las pruebas de DRC y LVS y por último hacer la extracción de parasitancias. Se guarda el diseño en un archivo verilog para realizarle pruebas.
+```
+write_verilog "$PROY_HOME_PHY/db/$DESIGN_NAME\_phy_sim.v"
+```
+Se realizan los pasos de seguridad en caso de que al rutear el diseño hubiera cambiado algo.
+```
+derive_pg_connection -power_net VDD -power_pin vdd -ground_net VSS -ground_pin gnd
+derive_pg_connection -power_net VDD -power_pin vdd -ground_net VSS -ground_pin gnd -tie
+set_preroute_drc_strategy -max_layer MET1
+preroute_standard_cells -nets VDD -fill_empty_rows -remove_floating_pieces -connect both;
+preroute_standard_cells -nets VSS -fill_empty_rows -remove_floating_pieces -connect both;
+```
+En esta parte se hace los rellenos de NWELL en aquellos lugares donde quedaron huecos que lo necesitan y el otro pone rellenos de metal a los metales que incumple con las reglas.
+```
+insert_well_filler -layer NWELL -higher_edge max -lower_edge min
+insert_metal_filler -from_metal 2 -to_metal 6
+```
+Se vuelve a guardar el diseño
+```
+save_mw_cel -as routed_cell
+close_mw_cel clock_tree_placed
+open_mw_cel routed_cell
+```
+Se vuelven a colocar las celdas de relleno por si el ruteo removio alguna. Y a correr otros pasos ya ejecutados por motivos de seguridad.
+```
+insert_stdcell_filler  -cell_with_metal FEED25HDLL -connect_to_power VDD -connect_to_ground VSS
+insert_stdcell_filler  -cell_with_metal FEED15HDLL  -connect_to_power VDD -connect_to_ground VSS
+insert_stdcell_filler  -cell_with_metal FEED10HDLL  -connect_to_power VDD -connect_to_ground VSS
+insert_stdcell_filler  -cell_with_metal FEED7HDLL  -connect_to_power VDD -connect_to_ground VSS
+insert_stdcell_filler  -cell_with_metal  FEED5HDLL  -connect_to_power VDD -connect_to_ground VSS
+insert_stdcell_filler  -cell_with_metal FEED3HDLL  -connect_to_power VDD -connect_to_ground VSS
+insert_stdcell_filler  -cell_with_metal FEED2HDLL  -connect_to_power VDD -connect_to_ground VSS
+insert_stdcell_filler  -cell_with_metal FEED1HDLL -connect_to_power VDD -connect_to_ground VSS
+derive_pg_connection -power_net "VDD" -ground_net "VSS"
+derive_pg_connection -power_net "VDD" -ground_net "VSS" -tie
+preroute_standard_cells -nets VDD -fill_empty_rows -remove_floating_pieces -connect both; 
+preroute_standard_cells -nets VSS -fill_empty_rows -remove_floating_pieces -connect both; 
+insert_well_filler -layer NWELL -higher_edge max -lower_edge min
+insert_metal_filler -from_metal 2 -to_metal 6
+derive_pg_connection -power_net VDD -power_pin vdd -ground_net VSS -ground_pin gnd
+derive_pg_connection -power_net VDD -power_pin vdd -ground_net VSS -ground_pin gnd -tie
+set_preroute_drc_strategy -max_layer MET1
+preroute_standard_cells -nets VDD -fill_empty_rows -remove_floating_pieces -connect both;
+preroute_standard_cells -nets VSS -fill_empty_rows -remove_floating_pieces -connect both; 
+```
+Se hacen verificaciones del diseño y se guarda lo generado hasta el momento.
+```
+verify_pg_nets
+verify_pg_nets -pad_pin_connection all
+check_mv_design -verbose > "$PROY_HOME_PHY/reports/$DESIGN_NAME\_chk_phy.txt"
+save_mw_cel routed_cell
+save_mw_cel routed_cell.FILL
+close_mw_cel top
+save_mw_cel -as top
+save_mw_cel -as top.FILL
+close_mw_cel routed_cell
+open_mw_cel -readonly top
+```
+Se escribe un verilog del diseño generado.
+```
+write_verilog -pg  \
+             -unconnected_ports \
+             -no_cover_cells \
+             -no_io_pad_cells \
+             -no_flip_chip_bump_cells\
+             -supply_statement  none $TOP_FILE_PHY
+```
+Se hace la extraccion rc de parasitancias.
+```
+extract_rc
+write_parasitics -output $TOP_FILE_PHY_SPEF
+write_sdc $TOP_FILE_PHY_SDC
+write_sdf $TOP_FILE_PHY_SDF
+write_def -output $TOP_FILE_PHY_DEF
+```
+Se genera el GDS el cual es el archivo que se le envía al fabricante para la contrucción del chip.
+```
+set_write_stream_options \
+             -child_depth 99 \
+             -output_filling fill \
+             -output_pin {text geometry} \
+             -map_layer $TECH_GDS_MAP_FILE \
+             -pin_name_mag 0.5 \
+             -output_polygon_pin \
+             -keep_data_type
+
+current_design top
+write_stream  -cells top.CEL -format gds $TOP_FILE_GDS
+```
+Se generan los reportes de area y consumo.
+```
+report_power -analysis_effort high > "$PROY_HOME_PHY/reports/$DESIGN_NAME\_phy_power.txt"
+report_area > "$PROY_HOME_PHY/reports/$DESIGN_NAME\_phy_area.txt"
+report_cell > "$PROY_HOME_PHY/reports/$DESIGN_NAME\_phy_cell.txt"
+report_qor > "$PROY_HOME_PHY/reports/$DESIGN_NAME\_phy_qor.txt"
+report_timing > "$PROY_HOME_PHY/reports/$DESIGN_NAME\_phy_timing.txt"
+report_port > "$PROY_HOME_PHY/reports/$DESIGN_NAME\_phy_port.txt"
+```
