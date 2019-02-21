@@ -357,3 +357,35 @@ El siguiente comando invoca unas herramientas de **IC Compiler** que evitan las 
 ```
 set_pnet_options -partial {METTP METTPL}
 ```
+
+Este comando alínea los straps de vdd y ground con los rieles de la celda en nivel más bajo de metal. 
+El comando trata de evitar que un strap de vdd caiga sobre un riel de ground de alguna celda o viceversa.
+
+```
+set_fp_rail_strategy -align_strap_with_m1_rail true; 
+```
+El primer comando crea los power nets con todas las restricciones seleccionados. El mismo comando le da a la herramienta restricciones de consumo y las nets que sintetizará. En la imagen se observan los straps creados para las celdas. El segundo comando da la confirmación a la herramienta de que se usara esta distribución de alimentación. Las imagenes que se muestran a continuación son las cosas que se deberían ver en el espacio de trabajo conforme se ejecutan los comandos.
+
+```
+synthesize_fp_rail  -nets { VDD VSS } -voltage_supply 1.8 -synthesize_power_plan -power_budget 1000 -pad_masters { VDD VSS } -use_pins_as_pads -use_strap_ends_as_pads 
+commit_fp_rail
+```
+<p align="center">
+  <img src="imagenes/power_nets.png">
+</p>
+
+<p align="center">
+  <img src="imagenes/power_nets_confirmed.png">
+</p>
+
+El primero de estos 3 comandos mueve las vias al centro de las interconexiones de las alimentación hacia el centro,
+Los otros dos comandos conetan las celdas a los anillos y straps de alimentacion. En la imagen se observa como las vias que se colocaron quedaron centrados en el metal y como se conectaron las celdas con un metal de color gris.
+```
+set_preroute_advanced_via_rule -move_via_to_center
+preroute_standard_cells -nets VDD -fill_empty_rows -remove_floating_pieces -connect both -extend_to_boundaries_and_generate_pins
+preroute_standard_cells -nets VSS -fill_empty_rows -remove_floating_pieces -connect both -extend_to_boundaries_and_generate_pins
+```
+
+<p align="center">
+  <img src="imagenes/ruteo_alimentacion.png">
+</p>
