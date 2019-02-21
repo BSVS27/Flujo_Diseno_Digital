@@ -73,8 +73,9 @@ read_sdc -version Latest $TOP_FILE_SDC;
 # Para utilzar la infromación del SAIF en la síntesis física y el floorplan
 #----------------------------------------------------------------------------------------------------------------
 #----------------------------------------------------------------------------------------------------------------
-reset_switching_acivity
-read_saif -input alu.saif -instance_name test_top -auto_map_names
+reset_switching_activity
+read_saif -input "$PROY_HOME/back_end/source/$DESIGN_NAME.saif" \
+ -instance_name $TEST_INST_NAME/inst_top -auto_map_names;
 #----------------------------------------------------------------------------------------------------------------
 #----------------------------------------------------------------------------------------------------------------
 # El para aplicar la estrategia de diseño necesita conocer la unidad mínima de tile. En este caso se le da 
@@ -262,66 +263,59 @@ preroute_standard_cells -nets VSS -fill_empty_rows -remove_floating_pieces -conn
 save_mw_cel -as place_ends
 close_mw_cel powerplan_rail_ends
 open_mw_cel place_ends
-
-
-### Aca estan puestos ya los rellenos 
-## Luego hacemos como Ronny sugiere y los colocamos despues
-
-#save_mw_cel fill_ends
-#save_mw_cel fill_ends.FILL
-#save_mw_cel -as clock_tree_placed
-#save_mw_cel -as clock_tree_placed.FILL
-#close_mw_cel fill_ends
-#open_mw_cel clock_tree_placed.FILL
-
-#ANTENNATS configuration 
-#source xx018.ante.rules
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# Cargado de la s reglas de antenna, dando su ubicanción y instanciandolas en la herramienta
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 source $TECH_ROOT/xh018/synopsys/v6_3/techMW/v6_3_1_1/xh018-synopsys-techMW-v6_3_1_1/xx018.ante.rules
 report_antenna_rules
-#set_route_zrt_detail_options -diode_libcell_names ANTENNATS -insert_diodes_during_routing true
-
-#Estime el retardo de cada path usando el comando route_zrt_global y utilice el comando set_route_zrt para asegurar que se tomen en cuenta los path groups
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# En esta parte se le da las opciones al enrutador para que pueda hacer su trabajo. La segunda instruccion hace 
+# una estimacion de ruteo del diseño. El tercero hace una optimizaciones en tiempo.
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 set_route_zrt_common_options -plan_group_aware all_routing
-
-
-#Genere un estimado del retarso de los cables en el diseño usando el comando route_zrt_global -effort ultra
 route_zrt_global -effort ultra
-#optimize el posicionamiento de las celdas para mejorar los resultados de timing usando el comando optimize_fp_timing
 optimize_fp_timing
-#verifique nuevamente cuál es el peor camino Max en el diseño usando el comando report_timing ¿Nota algún cambio?
-#report_timing -nets -capacitance -transition_time -input_pin;
-
-#Hasta aca todo bien. Celdas conectadas a VDD VSS
-
-#Vamos a definir las opciones para el Z Router
-
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# Se definen varias opciones del enrutador
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 set_route_zrt_common_options -default true
 set_route_zrt_global_options -timing_driven true
 set_route_zrt_global_options -effort high
 set_route_zrt_track_options -timing_driven true
 set_route_zrt_detail_options -drc_convergence_effort_level high
-
-####
-#Reducir la cantidad de buffers e inversores, sin afectar la calidad del resultado
-###
 set_buffer_opt_strategy -effort low
 set_route_zrt_detail_options -default_gate_size 0.1
-
-## Preparamos y ejecutamos la sintesis del arbol de reloj
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# Ahora se ejecutara la síntesis de arbol de reloj.
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 set_clock_tree_options -clock_trees clk -insert_boundary_cell true -ocv_clustering true -buffer_relocation true -buffer_sizing true -gate_relocation true -gate_sizing true
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# El primer y segundo comando habilitan a la herramienta a revisar el arbol de reloj generado. El tercero ejecuta el ruteo del reloj. 
+#Al final se hace un guardado del diseño
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 set cts_use_debug_mode true
 set cts_do_characterization true
 clock_opt -fix_hold_all_clocks
-
 save_mw_cel -as clock_tree_placed
-
 close_mw_cel place_ends
-
 open_mw_cel clock_tree_placed
-######
-
-#report_timing -nets -capacitance -transition_time -input_pin;
-
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# El primer comando le dice a la herramienta que no toque el reloj ya generado para el diseño. Y los siguiente comandos 
+#hacen un proceso iterativo para conectar todas las celdas optimizando y liberando las congestiones. Por último
+# revisa las reglas de antena.
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 set_dont_touch_network clk
 route_zrt_auto -max_detail_route_iterations 40 ; #40
 verify_zrt_route
@@ -332,48 +326,47 @@ route_zrt_detail -incremental true -max_number_iterations 40; #40
 focal_opt -drc_nets all
 remove_zrt_redundant_shapes -report_changed_nets true
 verify_zrt_route -antenna true
-# Insertamos diodos si hay errores aun de Antena
-
-#insert_diode -prefix fixAntx
-#Vamos a verificar DRC de ruteo
 verify_zrt_route -antenna true  > "$PROY_HOME_PHY/reports/$DESIGN_NAME\_drc_route.txt"
 verify_pg_nets > "$PROY_HOME_PHY/reports/$DESIGN_NAME\_pg_nets.txt"
 verify_pg_nets -pad_pin_connection all > "$PROY_HOME_PHY/reports/$DESIGN_NAME\_pg_nets_pad_pin_connection.txt"
-## Vamos a correr DRC y LVS antes de rellenar
-#Definimos opciones para el ICV
-
-
-
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# Se guarda el diseño en verilog
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 write_verilog "$PROY_HOME_PHY/db/$DESIGN_NAME\_phy_sim.v"
-
-
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# Se realizan los pasos de seguridad en caso de que al rutear el diseño hubiera cambiado algo.
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 derive_pg_connection -power_net VDD -power_pin vdd -ground_net VSS -ground_pin gnd
 derive_pg_connection -power_net VDD -power_pin vdd -ground_net VSS -ground_pin gnd -tie
-#Volvemos a revisar el ruteo de las celdas estandar
 set_preroute_drc_strategy -max_layer MET1
-preroute_standard_cells -nets VDD -fill_empty_rows -remove_floating_pieces -connect both; # -extend_to_boundaries_and_generate_pins
-preroute_standard_cells -nets VSS -fill_empty_rows -remove_floating_pieces -connect both; # -extend_to_boundaries_and_generate_pins
-## Hasta aca no hay errores de conexion VDD, VSS (verify_pg_nets correcto)
-
-####Rellenos de NWELL
+preroute_standard_cells -nets VDD -fill_empty_rows -remove_floating_pieces -connect both;
+preroute_standard_cells -nets VSS -fill_empty_rows -remove_floating_pieces -connect both;
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# En esta parte hace dos rellenos de NWELL en aquellos lugares donde quedaron huecos que lo necesitan.
+# y el otro pone rellenos de metal a los metales que incumple con las reglas.
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 insert_well_filler -layer NWELL -higher_edge max -lower_edge min
-
-###Rellenos de metal Al final P 7.57 iccug
-
 insert_metal_filler -from_metal 2 -to_metal 6
-
-## Guardames celda ruteada, faltan rellenos finales e insertar vias redundantes. revision DRC y LVS final
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# Se vuelve a guardar el diseño
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 save_mw_cel -as routed_cell
 close_mw_cel clock_tree_placed
 open_mw_cel routed_cell
-
-## Colocamos vias redundantes
-#derive_pg_connection
-#insert_redundant_vias -auto_mode insert 
-
-## Insertamos las celdas de relleno. Segun man page, deben conectarse de mayor a menor
-#Segun ICC Implementation Guide. 
-
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# Se vuelven a colocar las celdas de relleno por si el ruteo removio alguna. Y a correr otros pasos ya ejecutados 
+# por motivos de seguridad.
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 insert_stdcell_filler  -cell_with_metal FEED25HDLL -connect_to_power VDD -connect_to_ground VSS
 insert_stdcell_filler  -cell_with_metal FEED15HDLL  -connect_to_power VDD -connect_to_ground VSS
 insert_stdcell_filler  -cell_with_metal FEED10HDLL  -connect_to_power VDD -connect_to_ground VSS
@@ -384,70 +377,56 @@ insert_stdcell_filler  -cell_with_metal FEED2HDLL  -connect_to_power VDD -connec
 insert_stdcell_filler  -cell_with_metal FEED1HDLL -connect_to_power VDD -connect_to_ground VSS
 derive_pg_connection -power_net "VDD" -ground_net "VSS"
 derive_pg_connection -power_net "VDD" -ground_net "VSS" -tie
-
-preroute_standard_cells -nets VDD -fill_empty_rows -remove_floating_pieces -connect both; # -extend_to_boundaries_and_generate_pins
-preroute_standard_cells -nets VSS -fill_empty_rows -remove_floating_pieces -connect both; # -extend_to_boundaries_and_generate_pins
-####Rellenos de NWELL
+preroute_standard_cells -nets VDD -fill_empty_rows -remove_floating_pieces -connect both; 
+preroute_standard_cells -nets VSS -fill_empty_rows -remove_floating_pieces -connect both; 
 insert_well_filler -layer NWELL -higher_edge max -lower_edge min
-
-###Rellenos de metal Al final P 7.57 iccug
-
 insert_metal_filler -from_metal 2 -to_metal 6
-
-#derive_pg_connection
 derive_pg_connection -power_net VDD -power_pin vdd -ground_net VSS -ground_pin gnd
 derive_pg_connection -power_net VDD -power_pin vdd -ground_net VSS -ground_pin gnd -tie
-#Volvemos a revisar el ruteo de las celdas estandar
 set_preroute_drc_strategy -max_layer MET1
-preroute_standard_cells -nets VDD -fill_empty_rows -remove_floating_pieces -connect both; # -extend_to_boundaries_and_generate_pins
-preroute_standard_cells -nets VSS -fill_empty_rows -remove_floating_pieces -connect both; # -extend_to_boundaries_and_generate_pins
-
-
-#Verificamos que nada se rompiera
+preroute_standard_cells -nets VDD -fill_empty_rows -remove_floating_pieces -connect both;
+preroute_standard_cells -nets VSS -fill_empty_rows -remove_floating_pieces -connect both; 
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# Se hacen verificaciones del diseño y se guarda.
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 verify_pg_nets
 verify_pg_nets -pad_pin_connection all
-
-# Revisamos el diseno
 check_mv_design -verbose > "$PROY_HOME_PHY/reports/$DESIGN_NAME\_chk_phy.txt"
-
 save_mw_cel routed_cell
 save_mw_cel routed_cell.FILL
 close_mw_cel top
-#copy_mw_cel -from  routed_cell -to top;
-#copy_mw_cel  -hierarchy -design top
 save_mw_cel -as top
 save_mw_cel -as top.FILL
-
 close_mw_cel routed_cell
-
 open_mw_cel -readonly top
-
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# Se escribe un verilog del diseño generado.
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 write_verilog -pg  \
              -unconnected_ports \
              -no_cover_cells \
              -no_io_pad_cells \
              -no_flip_chip_bump_cells\
              -supply_statement  none $TOP_FILE_PHY
-
-#write_verilog -pg  \
-#             -unconnected_ports \
-#             -no_cover_cells \
-#             -no_io_pad_cells \
-#             -no_unconnected_cells \
-#             -no_flip_chip_bump_cells \
- #            -no_physical_only_cells \
- #            -supply_statement  none $TOP_FILE_PHY
-# write_verilog -no_physical_only_cells $TOP_FILE_PHY
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# Sehace la extraccion rc de parasitancias.
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 extract_rc
 write_parasitics -output $TOP_FILE_PHY_SPEF
 write_sdc $TOP_FILE_PHY_SDC
 write_sdf $TOP_FILE_PHY_SDF
-#corregir qui
 write_def -output $TOP_FILE_PHY_DEF
-
-
-
-## Escribimos GDS
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# Se genera el GDS
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 set_write_stream_options \
              -child_depth 99 \
              -output_filling fill \
@@ -457,30 +436,16 @@ set_write_stream_options \
              -output_polygon_pin \
              -keep_data_type
 
-## Recordar cambiar el diseno antes de sacar
 current_design top
-#write_stream -lib_name $TOP_CEL -format gds ../../results/${TOP_CEL_NAME}.gds
-
-#SOlo guardamos la celda completa final
 write_stream  -cells top.CEL -format gds $TOP_FILE_GDS
-
-
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
+# Se generan los reportes de area y consumo.
+#----------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------
 report_power -analysis_effort high > "$PROY_HOME_PHY/reports/$DESIGN_NAME\_phy_power.txt"
 report_area > "$PROY_HOME_PHY/reports/$DESIGN_NAME\_phy_area.txt"
 report_cell > "$PROY_HOME_PHY/reports/$DESIGN_NAME\_phy_cell.txt"
 report_qor > "$PROY_HOME_PHY/reports/$DESIGN_NAME\_phy_qor.txt"
 report_timing > "$PROY_HOME_PHY/reports/$DESIGN_NAME\_phy_timing.txt"
 report_port > "$PROY_HOME_PHY/reports/$DESIGN_NAME\_phy_port.txt"
-#set anotar "\$asic/db/be/alu/add_subt/Francis/$design_name\_phy.sdf"
-#set string_replace "sed -i \"s/endmodule/initial\ \\\$sdf\_annotate\(\\\"$anotar\\\"\)\\\\; \\n endmodule/g\" $design_home/$design_name\_phy_sim.v"
-#exec /bin/sh -c "$string_replace"
-
-#------------------------------------------------------------------------------
-# Nota 2: Mensajes suprimidos
-#------------------------------------------------------------------------------
-
-# SDC-3: 		La restricción "set_wire_load_mode", no es compatible con icc_shell.
-# SDC-4: 		La restricción "set_wire_load_model", es ignorada.
-# UID-401: 		Los atributos de regla de diseño de la celda de conducción se establecerán en el puerto
-# HDUEDIT-104: 	Se ingresó un comando que cambió la base de datos pero no tiene soporte para deshacer,
-# 				por lo que se borró la pila de deshacer actual.
