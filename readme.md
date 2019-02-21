@@ -444,8 +444,69 @@ save_mw_cel -as place_ends
 close_mw_cel powerplan_rail_ends
 open_mw_cel place_ends
 ```
-
-
 <p align="center">
   <img src="imagenes/Celdas_relleno.png">
 </p>
+ 
+En esta parte se cargan las reglas de antena dando la dirección en donde se encuentra y inicializandolas en la herramienta.
+
+```
+source $TECH_ROOT/xh018/synopsys/v6_3/techMW/v6_3_1_1/xh018-synopsys-techMW-v6_3_1_1/xx018.ante.rules
+report_antenna_rules
+```
+En esta parte se le da las opciones al enrutador(de nombre Zroute) para que pueda hacer su trabajo. Hace un primer ruteo y con él hace una estimacion de timing para hacer un reordenamiento optimizando este factor.
+```
+set_route_zrt_common_options -plan_group_aware all_routing
+route_zrt_global -effort ultra
+optimize_fp_timing
+```
+
+Ahora se le define unas nuevas opciones al enrutador.
+```
+set_route_zrt_common_options -default true
+set_route_zrt_global_options -timing_driven true
+set_route_zrt_global_options -effort high
+set_route_zrt_track_options -timing_driven true
+set_route_zrt_detail_options -drc_convergence_effort_level high
+set_buffer_opt_strategy -effort low
+set_route_zrt_detail_options -default_gate_size 0.1
+```
+
+El siguiente comando ejecutará la síntesis de arbol de reloj.
+```
+set_clock_tree_options -clock_trees clk -insert_boundary_cell true -ocv_clustering true -buffer_relocation true -buffer_sizing true -gate_relocation true -gate_sizing true
+```
+
+El primer y segundo comando habilitan a la herramienta a revisar el arbol de reloj generado. El tercero ejecuta el ruteo del reloj. Al final se hace un guardado del diseño
+
+```
+set cts_use_debug_mode true
+set cts_do_characterization true
+clock_opt -fix_hold_all_clocks
+save_mw_cel -as clock_tree_placed
+close_mw_cel place_ends
+open_mw_cel clock_tree_placed
+```
+<p align="center">
+  <img src="imagenes/Ruteo_arbol.png">
+</p>
+
+El primer comando le dice a la herramienta que no toque el reloj ya generado para el diseño. Y los siguiente comandos hacen un proceso iterativo para conectar todas las celdas optimizando y liberando las congestiones. Por último
+revisa las reglas de antena. En la imagen se puede observar como queda el diseño despues del ruteo.
+
+```
+set_dont_touch_network clk
+route_zrt_auto -max_detail_route_iterations 40 ; #40
+verify_zrt_route
+psynopt -congestion
+route_zrt_auto -max_detail_route_iterations 40; #40
+route_opt -incremental
+route_zrt_detail -incremental true -max_number_iterations 40; #40
+focal_opt -drc_nets all
+remove_zrt_redundant_shapes -report_changed_nets true
+verify_zrt_route -antenna true
+```
+<p align="center">
+  <img src="imagenes/diseno_conectado.png">
+</p>
+
