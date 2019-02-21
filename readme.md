@@ -440,6 +440,9 @@ derive_pg_connection -power_net "VDD" -ground_net "VSS"
 derive_pg_connection -power_net "VDD" -ground_net "VSS" -tie
 preroute_standard_cells -nets VDD -fill_empty_rows -remove_floating_pieces -connect both;
 preroute_standard_cells -nets VSS -fill_empty_rows -remove_floating_pieces -connect both;
+save_mw_cel -as place_ends
+close_mw_cel powerplan_rail_ends
+open_mw_cel place_ends
 ```
 
 
